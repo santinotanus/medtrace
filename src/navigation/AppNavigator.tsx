@@ -8,21 +8,28 @@ import { COLORS } from '../constants/theme';
 
 // Auth Screens
 import LoginScreen from '../screens/auth/LoginScreen';
-//import RegisterScreen from '../screens/auth/RegisterScreen';
+import RegisterScreen from '../screens/auth/RegisterScreen';
 import OnboardingScreen from '../screens/auth/OnboardingScreen';
-//import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import VerifyCodeScreen from '../screens/auth/VerifyCodeScreen';
 import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen';
-//import PasswordSuccessScreen from '../screens/auth/PasswordSuccessScreen';
+import PasswordSuccessScreen from '../screens/auth/PasswordSuccessScreen';
 
 // App Screens
 import HomeScreen from '../screens/app/HomeScreen';
 import ScannerScreen from '../screens/app/ScannerScreen';
-//import ProfileScreen from '../screens/app/ProfileScreen';
+import ProfileScreen from '../screens/app/ProfileScreen';
 import ScanResultSafeScreen from '../screens/app/ScanResultSafeScreen';
 import ScanResultAlertScreen from '../screens/app/ScanResultAlertScreen';
 import AlertsScreen from '../screens/app/AlertsScreen';
 import ReportScreen from '../screens/app/ReportScreen';
+import AlertDetailScreen from '../screens/app/AlertDetailScreen';
+import HistoryScreen from '../screens/app/HistoryScreen';
+import SettingsScreen from '../screens/app/SettingsScreen';
+import NotificationsSettingsScreen from '../screens/app/NotificationsSettingsScreen';
+import PrivacyScreen from '../screens/app/PrivacyScreen';
+import HelpScreen from '../screens/app/HelpScreen';
+import AboutScreen from '../screens/app/AboutScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
