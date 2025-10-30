@@ -1,7 +1,7 @@
 {
   "name": "medtrace",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -9,14 +9,21 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "expo": "~54.0.20",
+    "@react-navigation/bottom-tabs": "^6.6.1",
+    "@react-navigation/native": "^6.1.18",
+    "@react-navigation/native-stack": "^6.11.0",
+    "expo": "^54.0.20",
+    "expo-linear-gradient": "~15.0.7",
     "expo-status-bar": "~3.0.8",
-    "react": "19.1.0",
-    "react-native": "0.81.5"
+    "react": "^19.2.0",
+    "react-native": "^0.82.1",
+    "react-native-safe-area-context": "^5.6.1",
+    "react-native-screens": "^4.18.0"
   },
   "devDependencies": {
-    "@types/react": "~19.1.0",
-    "typescript": "~5.9.2"
-  },
-  "private": true
+    "@babel/core": "^7.20.0",
+    "@types/react": "^19.2.2",
+    "@types/react-native": "^0.73.0",
+    "typescript": "^5.9.3"
+  }
 }
