@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Scanner'>;
 export default function ScannerScreen({ navigation }: Props) {
   const scanLineAnim = React.useRef(new Animated.Value(0)).current;
 
-  React.useEffect(() => {
+  useEffect(() => {
+    // Animación de línea de escaneo
     Animated.loop(
       Animated.sequence([
         Animated.timing(scanLineAnim, {
@@ -31,7 +32,21 @@ export default function ScannerScreen({ navigation }: Props) {
         }),
       ])
     ).start();
-  }, []);
+
+    // Simular escaneo exitoso después de 3 segundos
+    const timer = setTimeout(() => {
+      // Resultado aleatorio: 70% seguro, 30% alerta
+      const isSafe = Math.random() > 0.3;
+
+      if (isSafe) {
+        navigation.replace('ScanResultSafe', {});
+      } else {
+        navigation.replace('ScanResultAlert', {});
+      }
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [navigation]);
 
   const translateY = scanLineAnim.interpolate({
     inputRange: [0, 1],
@@ -46,11 +61,18 @@ export default function ScannerScreen({ navigation }: Props) {
           style={styles.headerButton}
           onPress={() => navigation.goBack()}
         >
-          <View style={styles.headerIcon} />
+          <View style={styles.backIcon}>
+            <View style={styles.backArrow} />
+          </View>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Escanear Medicamento</Text>
-        <TouchableOpacity style={styles.headerButton}>
-          <View style={styles.headerIcon} />
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => navigation.navigate('Help' as any)}
+        >
+          <View style={styles.infoIcon}>
+            <Text style={styles.infoText}>i</Text>
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -60,6 +82,7 @@ export default function ScannerScreen({ navigation }: Props) {
           <View style={styles.cameraIconContainer}>
             <View style={styles.cameraIcon} />
             <Text style={styles.cameraText}>Vista de cámara</Text>
+            <Text style={styles.scanningText}>Escaneando...</Text>
           </View>
         </View>
 
@@ -117,11 +140,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...SHADOWS.small,
   },
-  headerIcon: {
+  backIcon: {
     width: 20,
     height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backArrow: {
+    width: 12,
+    height: 12,
+    borderLeftWidth: 3,
+    borderBottomWidth: 3,
+    borderColor: COLORS.gray700,
+    transform: [{ rotate: '45deg' }],
+  },
+  infoIcon: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: COLORS.gray700,
-    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoText: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   headerTitle: {
     fontSize: SIZES.lg,
@@ -152,6 +196,12 @@ const styles = StyleSheet.create({
   cameraText: {
     fontSize: SIZES.base,
     color: COLORS.gray400,
+    marginBottom: 8,
+  },
+  scanningText: {
+    fontSize: SIZES.sm,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   scanFrame: {
     position: 'absolute',
@@ -212,7 +262,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.8,
     shadowRadius: 10,
     elevation: 5,
   },

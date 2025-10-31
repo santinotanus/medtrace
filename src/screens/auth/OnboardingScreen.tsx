@@ -6,11 +6,12 @@ import {
   FlatList,
   Dimensions,
   ViewToken,
+  TouchableOpacity,
+  SafeAreaView,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
-import Button from '../../components/Button';
-import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { COLORS, SIZES } from '../../constants/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
@@ -18,37 +19,36 @@ const { width } = Dimensions.get('window');
 
 interface OnboardingSlide {
   id: string;
-  icon: string;
   title: string;
   description: string;
   iconBg: string;
-  iconColor: string;
+  iconType: 'qr' | 'alert' | 'shield';
 }
 
 const slides: OnboardingSlide[] = [
   {
     id: '1',
-    icon: 'qr',
     title: 'Escanea y Verifica',
-    description: 'Escanea el código QR de cualquier medicamento para verificar su autenticidad y seguridad en tiempo real',
-    iconBg: COLORS.primaryLight,
-    iconColor: COLORS.primary,
+    description:
+      'Escanea el código QR de cualquier medicamento para verificar su autenticidad y seguridad en tiempo real',
+    iconBg: 'rgba(139, 92, 246, 0.1)',
+    iconType: 'qr',
   },
   {
     id: '2',
-    icon: 'alert',
     title: 'Alertas en Tiempo Real',
-    description: 'Recibe notificaciones instantáneas sobre medicamentos contaminados o retirados del mercado',
-    iconBg: COLORS.errorLight,
-    iconColor: COLORS.error,
+    description:
+      'Recibe notificaciones instantáneas sobre medicamentos contaminados o retirados del mercado',
+    iconBg: '#FEE2E2',
+    iconType: 'alert',
   },
   {
     id: '3',
-    icon: 'shield',
     title: 'Reporta Problemas',
-    description: 'Ayuda a proteger a otros reportando efectos adversos o problemas de calidad en medicamentos',
-    iconBg: COLORS.successLight,
-    iconColor: COLORS.success,
+    description:
+      'Ayuda a proteger a otros reportando efectos adversos o problemas de calidad en medicamentos',
+    iconBg: '#D1FAE5',
+    iconType: 'shield',
   },
 ];
 
@@ -83,25 +83,56 @@ export default function OnboardingScreen({ navigation }: Props) {
     navigation.replace('Login');
   };
 
+  const renderIcon = (type: 'qr' | 'alert' | 'shield', bg: string) => {
+    if (type === 'qr') {
+      return (
+        <View style={[styles.iconContainer, { backgroundColor: bg }]}>
+          <View style={styles.qrIcon}>
+            <View style={styles.qrSquare1} />
+            <View style={styles.qrSquare2} />
+            <View style={styles.qrSquare3} />
+            <View style={styles.qrSquare4} />
+            <View style={styles.qrCenter} />
+          </View>
+        </View>
+      );
+    }
+
+    if (type === 'alert') {
+      return (
+        <View style={[styles.iconContainer, { backgroundColor: bg }]}>
+          <View style={styles.alertIconWrapper}>
+            <View style={styles.alertTriangle} />
+            <View style={styles.alertExclamation} />
+            <View style={styles.alertDot} />
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <View style={[styles.iconContainer, { backgroundColor: bg }]}>
+        <View style={styles.shieldIcon}>
+          <View style={styles.shieldBody} />
+          <View style={styles.shieldCheck} />
+        </View>
+      </View>
+    );
+  };
+
   const renderSlide = ({ item }: { item: OnboardingSlide }) => (
     <View style={styles.slide}>
       <View style={styles.content}>
-        <View style={[styles.iconContainer, { backgroundColor: item.iconBg }]}>
-          {renderIcon(item.icon, item.iconColor)}
-        </View>
+        {renderIcon(item.iconType, item.iconBg)}
         <Text style={styles.title}>{item.title}</Text>
         <Text style={styles.description}>{item.description}</Text>
       </View>
     </View>
   );
 
-  const renderIcon = (icon: string, color: string) => {
-    // Simplified icon representations
-    return <View style={[styles.icon, { backgroundColor: color }]} />;
-  };
-
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      {/* Progress Bars */}
       <View style={styles.progressContainer}>
         {slides.map((_, index) => (
           <View
@@ -114,6 +145,7 @@ export default function OnboardingScreen({ navigation }: Props) {
         ))}
       </View>
 
+      {/* Slides */}
       <FlatList
         ref={flatListRef}
         data={slides}
@@ -126,21 +158,21 @@ export default function OnboardingScreen({ navigation }: Props) {
         keyExtractor={(item) => item.id}
       />
 
+      {/* Buttons */}
       <View style={styles.footer}>
-        <Button
-          title={currentIndex === slides.length - 1 ? 'Comenzar' : 'Siguiente'}
-          onPress={handleNext}
-        />
+        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+          <Text style={styles.nextButtonText}>
+            {currentIndex === slides.length - 1 ? 'Comenzar' : 'Siguiente'}
+          </Text>
+        </TouchableOpacity>
+
         {currentIndex < slides.length - 1 && (
-          <Button
-            title="Omitir"
-            onPress={handleSkip}
-            variant="secondary"
-            style={styles.skipButton}
-          />
+          <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+            <Text style={styles.skipButtonText}>Omitir</Text>
+          </TouchableOpacity>
         )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -153,7 +185,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 48,
     marginBottom: 48,
   },
   progressBar: {
@@ -183,13 +215,122 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 32,
   },
-  icon: {
+  // QR Icon
+  qrIcon: {
     width: 64,
     height: 64,
-    borderRadius: 8,
+    position: 'relative',
+  },
+  qrSquare1: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    backgroundColor: COLORS.primary,
+    borderRadius: 3,
+    top: 0,
+    left: 0,
+  },
+  qrSquare2: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    backgroundColor: COLORS.primary,
+    borderRadius: 3,
+    top: 0,
+    right: 0,
+  },
+  qrSquare3: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    backgroundColor: COLORS.primary,
+    borderRadius: 3,
+    bottom: 0,
+    left: 0,
+  },
+  qrSquare4: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+    backgroundColor: COLORS.primary,
+    borderRadius: 2,
+    bottom: 0,
+    right: 0,
+  },
+  qrCenter: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    backgroundColor: COLORS.primary,
+    borderRadius: 2,
+    top: 24,
+    left: 24,
+  },
+  // Alert Icon
+  alertIconWrapper: {
+    width: 64,
+    height: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  alertTriangle: {
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderLeftWidth: 28,
+    borderRightWidth: 28,
+    borderBottomWidth: 50,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: COLORS.error,
+  },
+  alertExclamation: {
+    position: 'absolute',
+    width: 4,
+    height: 20,
+    backgroundColor: COLORS.white,
+    borderRadius: 2,
+    top: 15,
+  },
+  alertDot: {
+    position: 'absolute',
+    width: 5,
+    height: 5,
+    backgroundColor: COLORS.white,
+    borderRadius: 2.5,
+    bottom: 8,
+  },
+  // Shield Icon
+  shieldIcon: {
+    width: 64,
+    height: 64,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shieldBody: {
+    width: 50,
+    height: 56,
+    backgroundColor: COLORS.success,
+    borderRadius: 25,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+  },
+  shieldCheck: {
+    position: 'absolute',
+    width: 28,
+    height: 16,
+    borderLeftWidth: 4,
+    borderBottomWidth: 4,
+    borderColor: COLORS.white,
+    transform: [{ rotate: '-45deg' }],
+    left: 18,
+    top: 20,
   },
   title: {
-    fontSize: SIZES.xxxl,
+    fontSize: 28,
     fontWeight: 'bold',
     color: COLORS.primary,
     marginBottom: 16,
@@ -205,9 +346,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 40,
   },
+  nextButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  nextButtonText: {
+    color: COLORS.white,
+    fontSize: SIZES.lg,
+    fontWeight: '600',
+  },
   skipButton: {
-    marginTop: 12,
     backgroundColor: 'transparent',
-    ...SHADOWS.small,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  skipButtonText: {
+    color: COLORS.gray500,
+    fontSize: SIZES.lg,
+    fontWeight: '600',
   },
 });

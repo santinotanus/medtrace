@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
@@ -43,6 +44,29 @@ const MenuItem: React.FC<MenuItemProps> = ({
 );
 
 export default function ProfileScreen({ navigation }: Props) {
+  const handleLogout = () => {
+    Alert.alert(
+      'Cerrar Sesión',
+      '¿Estás seguro que deseas cerrar sesión?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Cerrar Sesión',
+          style: 'destructive',
+          onPress: () => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -60,18 +84,29 @@ export default function ProfileScreen({ navigation }: Props) {
         {/* Stats */}
         <View style={styles.statsContainer}>
           <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
+            <TouchableOpacity
+              style={styles.statCard}
+              onPress={() => navigation.navigate('History' as any)}
+            >
               <Text style={[styles.statNumber, { color: COLORS.success }]}>24</Text>
               <Text style={styles.statLabel}>Verificados</Text>
-            </View>
-            <View style={styles.statCard}>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.statCard}
+              onPress={() => navigation.navigate('Alerts' as any)}
+            >
               <Text style={[styles.statNumber, { color: COLORS.primary }]}>3</Text>
               <Text style={styles.statLabel}>Alertas</Text>
-            </View>
-            <View style={styles.statCard}>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.statCard}
+              onPress={() => navigation.navigate('History' as any)}
+            >
               <Text style={[styles.statNumber, { color: COLORS.gray700 }]}>1</Text>
               <Text style={styles.statLabel}>Reportes</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -82,7 +117,7 @@ export default function ProfileScreen({ navigation }: Props) {
             iconBg={COLORS.primaryLight}
             title="Datos personales"
             subtitle="Editar información"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('Settings' as any)}
           />
 
           <MenuItem
@@ -90,7 +125,7 @@ export default function ProfileScreen({ navigation }: Props) {
             iconBg={COLORS.successLight}
             title="Notificaciones"
             subtitle="Configurar alertas"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('NotificationsSettings' as any)}
           />
 
           <MenuItem
@@ -98,7 +133,7 @@ export default function ProfileScreen({ navigation }: Props) {
             iconBg={COLORS.gray100}
             title="Historial completo"
             subtitle="Ver todas las verificaciones"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('History' as any)}
           />
 
           <MenuItem
@@ -106,7 +141,7 @@ export default function ProfileScreen({ navigation }: Props) {
             iconBg={COLORS.gray100}
             title="Privacidad y seguridad"
             subtitle="Gestionar permisos"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('Privacy' as any)}
           />
 
           <MenuItem
@@ -114,7 +149,7 @@ export default function ProfileScreen({ navigation }: Props) {
             iconBg={COLORS.gray100}
             title="Ayuda y soporte"
             subtitle="Preguntas frecuentes"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('Help' as any)}
           />
 
           <MenuItem
@@ -122,10 +157,13 @@ export default function ProfileScreen({ navigation }: Props) {
             iconBg={COLORS.gray100}
             title="Acerca de MedTrace"
             subtitle="Versión 1.0.0"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('About' as any)}
           />
 
-          <TouchableOpacity style={styles.logoutButton}>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
             <Text style={styles.logoutText}>Cerrar Sesión</Text>
           </TouchableOpacity>
         </View>

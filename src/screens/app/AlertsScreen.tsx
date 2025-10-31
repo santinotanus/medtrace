@@ -138,6 +138,7 @@ export default function AlertsScreen({ navigation }: Props) {
             <TouchableOpacity
               key={alert.id}
               style={[styles.alertCard, { borderLeftColor: style.borderColor }]}
+              onPress={() => navigation.navigate('AlertDetail' as any)}
             >
               <View style={styles.alertHeader}>
                 <View
@@ -162,9 +163,10 @@ export default function AlertsScreen({ navigation }: Props) {
                   </View>
                   <Text style={styles.alertTitle}>{alert.title}</Text>
                   <Text style={styles.alertMessage}>{alert.message}</Text>
-                  <TouchableOpacity>
-                    <Text style={styles.alertLink}>Ver detalles →</Text>
-                  </TouchableOpacity>
+                  <View style={styles.linkContainer}>
+                    <Text style={styles.alertLink}>Ver detalles</Text>
+                    <View style={styles.arrow} />
+                  </View>
                 </View>
               </View>
             </TouchableOpacity>
@@ -285,9 +287,22 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 12,
   },
+  linkContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   alertLink: {
     fontSize: SIZES.sm,
     fontWeight: '600',
     color: COLORS.primary,
+  },
+  arrow: {
+    width: 12,
+    height: 12,
+    borderTopWidth: 2,
+    borderRightWidth: 2,
+    borderColor: COLORS.primary,
+    transform: [{ rotate: '45deg' }],
   },
 });

@@ -23,54 +23,98 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={styles.welcomeText}>Bienvenido</Text>
             <Text style={styles.userName}>María González</Text>
           </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <View style={styles.notificationIcon} />
+          <TouchableOpacity
+            style={styles.notificationButton}
+            onPress={() => navigation.navigate('Alerts' as any)}
+          >
+            <View style={styles.bellIcon}>
+              <View style={styles.bellTop} />
+              <View style={styles.bellBody} />
+            </View>
             <View style={styles.notificationBadge} />
           </TouchableOpacity>
         </View>
 
-        {/* Alert Banner */}
-        <View style={styles.alertBanner}>
-          <View style={styles.alertIcon} />
+        {/* Alert Banner - Clickeable */}
+        <TouchableOpacity
+          style={styles.alertBanner}
+          onPress={() => navigation.navigate('AlertDetail' as any)}
+        >
+          <View style={styles.alertIconContainer}>
+            <View style={styles.alertTriangle} />
+          </View>
           <View style={styles.alertContent}>
             <Text style={styles.alertTitle}>Alerta Activa</Text>
             <Text style={styles.alertMessage}>
               Ibuprofeno 600mg - Lote X2847 retirado del mercado
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* Quick Actions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
           <View style={styles.quickActionsGrid}>
-            <TouchableOpacity style={styles.quickActionPrimary}>
-              <View style={styles.quickActionIcon} />
+            {/* Scan QR Button */}
+            <TouchableOpacity
+              style={styles.quickActionPrimary}
+              onPress={() => navigation.navigate('Scanner', {})}
+            >
+              <View style={styles.qrIconContainer}>
+                <View style={styles.qrSquare1} />
+                <View style={styles.qrSquare2} />
+                <View style={styles.qrSquare3} />
+                <View style={styles.qrSquare4} />
+              </View>
               <Text style={styles.quickActionTextPrimary}>Escanear QR</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.quickActionSecondary}>
-              <View style={styles.quickActionIconSecondary} />
+
+            {/* Report Button */}
+            <TouchableOpacity
+              style={styles.quickActionSecondary}
+              onPress={() => navigation.navigate('Report', {})}
+            >
+              <View style={styles.reportIconContainer}>
+                <View style={styles.reportTriangle} />
+              </View>
               <Text style={styles.quickActionTextSecondary}>Reportar</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Stats */}
+        {/* Stats - Clickeables */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Estadísticas</Text>
           <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>24</Text>
+            <TouchableOpacity
+              style={styles.statCard}
+              onPress={() => navigation.navigate('History' as any)}
+            >
+              <Text style={[styles.statNumber, { color: COLORS.success }]}>
+                24
+              </Text>
               <Text style={styles.statLabel}>Verificados</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={[styles.statNumber, { color: COLORS.primary }]}>3</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.statCard}
+              onPress={() => navigation.navigate('Alerts' as any)}
+            >
+              <Text style={[styles.statNumber, { color: COLORS.primary }]}>
+                3
+              </Text>
               <Text style={styles.statLabel}>Alertas</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={[styles.statNumber, { color: COLORS.gray700 }]}>1</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.statCard}
+              onPress={() => navigation.navigate('History' as any)}
+            >
+              <Text style={[styles.statNumber, { color: COLORS.gray700 }]}>
+                1
+              </Text>
               <Text style={styles.statLabel}>Reportes</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -78,27 +122,39 @@ export default function HomeScreen({ navigation }: Props) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Actividad Reciente</Text>
           <View style={styles.activityList}>
-            <View style={styles.activityItem}>
+            {/* Activity Item 1 - Clickeable */}
+            <TouchableOpacity
+              style={styles.activityItem}
+              onPress={() => navigation.navigate('ScanResultSafe', {})}
+            >
               <View style={styles.activityIconContainer}>
-                <View style={styles.activityIconSuccess} />
+                <View style={styles.checkIcon} />
               </View>
               <View style={styles.activityContent}>
                 <Text style={styles.activityTitle}>Paracetamol 500mg</Text>
-                <Text style={styles.activitySubtitle}>Verificado - Lote A1234</Text>
+                <Text style={styles.activitySubtitle}>
+                  Verificado - Lote A1234
+                </Text>
                 <Text style={styles.activityTime}>Hace 2 horas</Text>
               </View>
-            </View>
+            </TouchableOpacity>
 
-            <View style={styles.activityItem}>
+            {/* Activity Item 2 - Clickeable */}
+            <TouchableOpacity
+              style={styles.activityItem}
+              onPress={() => navigation.navigate('ScanResultSafe', {})}
+            >
               <View style={styles.activityIconContainer}>
-                <View style={styles.activityIconSuccess} />
+                <View style={styles.checkIcon} />
               </View>
               <View style={styles.activityContent}>
                 <Text style={styles.activityTitle}>Amoxicilina 875mg</Text>
-                <Text style={styles.activitySubtitle}>Verificado - Lote B5678</Text>
+                <Text style={styles.activitySubtitle}>
+                  Verificado - Lote B5678
+                </Text>
                 <Text style={styles.activityTime}>Hace 1 día</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -124,7 +180,7 @@ const styles = StyleSheet.create({
     color: COLORS.gray500,
   },
   userName: {
-    fontSize: SIZES.xxl,
+    fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.primary,
   },
@@ -138,11 +194,23 @@ const styles = StyleSheet.create({
     position: 'relative',
     ...SHADOWS.small,
   },
-  notificationIcon: {
+  bellIcon: {
     width: 20,
     height: 20,
+    alignItems: 'center',
+  },
+  bellTop: {
+    width: 4,
+    height: 4,
     backgroundColor: COLORS.gray700,
-    borderRadius: 4,
+    borderRadius: 2,
+    marginBottom: 2,
+  },
+  bellBody: {
+    width: 16,
+    height: 14,
+    backgroundColor: COLORS.gray700,
+    borderRadius: 8,
   },
   notificationBadge: {
     position: 'absolute',
@@ -163,13 +231,25 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     marginBottom: 24,
   },
-  alertIcon: {
+  alertIconContainer: {
     width: 20,
     height: 20,
-    backgroundColor: COLORS.error,
-    borderRadius: 10,
     marginRight: 12,
     marginTop: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alertTriangle: {
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderLeftWidth: 10,
+    borderRightWidth: 10,
+    borderBottomWidth: 18,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: COLORS.error,
   },
   alertContent: {
     flex: 1,
@@ -215,19 +295,66 @@ const styles = StyleSheet.create({
     padding: 24,
     ...SHADOWS.small,
   },
-  quickActionIcon: {
+  qrIconContainer: {
     width: 32,
     height: 32,
-    backgroundColor: COLORS.white,
-    borderRadius: 8,
     marginBottom: 12,
+    position: 'relative',
   },
-  quickActionIconSecondary: {
+  qrSquare1: {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    backgroundColor: COLORS.white,
+    borderRadius: 2,
+    top: 0,
+    left: 0,
+  },
+  qrSquare2: {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    backgroundColor: COLORS.white,
+    borderRadius: 2,
+    top: 0,
+    right: 0,
+  },
+  qrSquare3: {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    backgroundColor: COLORS.white,
+    borderRadius: 2,
+    bottom: 0,
+    left: 0,
+  },
+  qrSquare4: {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    backgroundColor: COLORS.white,
+    borderRadius: 2,
+    bottom: 0,
+    right: 0,
+  },
+  reportIconContainer: {
     width: 32,
     height: 32,
-    backgroundColor: COLORS.gray500,
-    borderRadius: 8,
     marginBottom: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reportTriangle: {
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderLeftWidth: 14,
+    borderRightWidth: 14,
+    borderBottomWidth: 24,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: COLORS.gray500,
   },
   quickActionTextPrimary: {
     fontSize: SIZES.base,
@@ -252,9 +379,8 @@ const styles = StyleSheet.create({
     ...SHADOWS.small,
   },
   statNumber: {
-    fontSize: SIZES.xxl,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: COLORS.success,
     marginBottom: 4,
   },
   statLabel: {
@@ -280,11 +406,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
-  activityIconSuccess: {
+  checkIcon: {
     width: 20,
     height: 20,
-    backgroundColor: COLORS.success,
     borderRadius: 10,
+    backgroundColor: COLORS.success,
   },
   activityContent: {
     flex: 1,

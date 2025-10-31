@@ -7,10 +7,11 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  SafeAreaView,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
-//import Input from '../../components/Input';
+import Input from '../../components/Input';
 import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
@@ -23,7 +24,6 @@ export default function LoginScreen({ navigation }: Props) {
 
   const handleLogin = async () => {
     setLoading(true);
-    // Simular login
     setTimeout(() => {
       setLoading(false);
       navigation.replace('MainTabs');
@@ -35,87 +35,110 @@ export default function LoginScreen({ navigation }: Props) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.logoContainer}>
-          <View style={styles.logo}>
-            <View style={styles.logoIcon} />
-          </View>
-          <Text style={styles.logoTitle}>MedTrace</Text>
-          <Text style={styles.logoSubtitle}>
-            Trazabilidad y seguridad de medicamentos
-          </Text>
-        </View>
-
-        <View style={styles.formContainer}>
-          <Text style={styles.formTitle}>Iniciar Sesión</Text>
-
-          <Input
-            label="Email"
-            placeholder="tu@email.com"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-
-          <Input
-            label="Contraseña"
-            placeholder="••••••••"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-
-          <TouchableOpacity
-            style={styles.forgotPassword}
-            onPress={() => navigation.navigate('ForgotPassword')}
-          >
-            <Text style={styles.forgotPasswordText}>
-              ¿Olvidaste tu contraseña?
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Logo Section */}
+          <View style={styles.logoContainer}>
+            <View style={styles.logo}>
+              <View style={styles.logoQR}>
+                {/* QR Icon simplificado */}
+                <View style={styles.qrSquare1} />
+                <View style={styles.qrSquare2} />
+                <View style={styles.qrSquare3} />
+              </View>
+            </View>
+            <Text style={styles.logoTitle}>MedTrace</Text>
+            <Text style={styles.logoSubtitle}>
+              Trazabilidad y seguridad de medicamentos
             </Text>
-          </TouchableOpacity>
-
-          <Button
-            title="Iniciar Sesión"
-            onPress={handleLogin}
-            loading={loading}
-          />
-
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>o</Text>
-            <View style={styles.dividerLine} />
           </View>
 
-          <Button
-            title="Continuar como invitado"
-            onPress={handleGuestMode}
-            variant="outline"
-          />
-        </View>
+          {/* Form Card */}
+          <View style={styles.formCard}>
+            <Text style={styles.formTitle}>Iniciar Sesión</Text>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>¿No tienes cuenta? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.footerLink}>Regístrate aquí</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <Input
+              label="Email"
+              placeholder="tu@email.com"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+
+            <Input
+              label="Contraseña"
+              placeholder="••••••••"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+
+            <TouchableOpacity
+              style={styles.forgotPassword}
+              onPress={() => navigation.navigate('ForgotPassword')}
+            >
+              <Text style={styles.forgotPasswordText}>
+                ¿Olvidaste tu contraseña?
+              </Text>
+            </TouchableOpacity>
+
+            <Button
+              title="Iniciar Sesión"
+              onPress={handleLogin}
+              loading={loading}
+            />
+
+            {/* Divider */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>o</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Guest Button */}
+            <TouchableOpacity
+              style={styles.guestButton}
+              onPress={handleGuestMode}
+            >
+              <View style={styles.guestButtonContent}>
+                <View style={styles.guestIcon}>
+                  <View style={styles.guestIconInner} />
+                </View>
+                <Text style={styles.guestButtonText}>
+                  Continuar como invitado
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>¿No tienes cuenta? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <Text style={styles.footerLink}>Regístrate aquí</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  container: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
@@ -137,14 +160,40 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     ...SHADOWS.medium,
   },
-  logoIcon: {
+  logoQR: {
     width: 48,
     height: 48,
+    position: 'relative',
+  },
+  qrSquare1: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
     backgroundColor: COLORS.white,
-    borderRadius: 8,
+    borderRadius: 2,
+    top: 0,
+    left: 0,
+  },
+  qrSquare2: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    backgroundColor: COLORS.white,
+    borderRadius: 2,
+    top: 0,
+    right: 0,
+  },
+  qrSquare3: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    backgroundColor: COLORS.white,
+    borderRadius: 2,
+    bottom: 0,
+    left: 0,
   },
   logoTitle: {
-    fontSize: SIZES.xxxl,
+    fontSize: 28,
     fontWeight: 'bold',
     color: COLORS.primary,
     marginBottom: 8,
@@ -153,8 +202,9 @@ const styles = StyleSheet.create({
     fontSize: SIZES.base,
     color: COLORS.gray600,
     textAlign: 'center',
+    paddingHorizontal: 20,
   },
-  formContainer: {
+  formCard: {
     backgroundColor: COLORS.white,
     borderRadius: 20,
     padding: 24,
@@ -162,7 +212,7 @@ const styles = StyleSheet.create({
     ...SHADOWS.large,
   },
   formTitle: {
-    fontSize: SIZES.xxl,
+    fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.gray900,
     marginBottom: 24,
@@ -170,6 +220,7 @@ const styles = StyleSheet.create({
   forgotPassword: {
     alignSelf: 'flex-end',
     marginBottom: 16,
+    marginTop: -8,
   },
   forgotPasswordText: {
     fontSize: SIZES.sm,
@@ -190,6 +241,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: SIZES.sm,
     color: COLORS.gray500,
+  },
+  guestButton: {
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    backgroundColor: COLORS.white,
+  },
+  guestButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  guestIcon: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guestIconInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: COLORS.primary,
+  },
+  guestButtonText: {
+    fontSize: SIZES.base,
+    fontWeight: '600',
+    color: COLORS.primary,
   },
   footer: {
     flexDirection: 'row',
