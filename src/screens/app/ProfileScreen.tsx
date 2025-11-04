@@ -8,7 +8,7 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainTabParamList, RootStackParamList } from '../../types';
@@ -17,6 +17,7 @@ import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 // Tipado
 type TabNav = BottomTabNavigationProp<MainTabParamList, 'Profile'>;
 type RootNav = NativeStackNavigationProp<RootStackParamList>;
+type ProfileRouteProp = RouteProp<MainTabParamList, 'Profile'>;
 
 // Componente individual del menú
 interface MenuItemProps {
@@ -51,6 +52,8 @@ const MenuItem: React.FC<MenuItemProps> = ({
 export default function ProfileScreen() {
   const tabNav = useNavigation<TabNav>();
   const stackNav = tabNav.getParent<RootNav>();
+  const route = useRoute<ProfileRouteProp>();
+  const isGuest = route.params?.guest;
 
   const handleLogout = () => {
     Alert.alert(
@@ -72,6 +75,55 @@ export default function ProfileScreen() {
     );
   };
 
+  const handleLogin = () => {
+    stackNav?.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  };
+
+  if (isGuest) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* Guest Header */}
+          <View style={styles.header}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>?</Text>
+              </View>
+            </View>
+            <Text style={styles.userName}>Invitado</Text>
+            <Text style={styles.userEmail}>
+              Inicia sesión para una experiencia completa
+            </Text>
+          </View>
+
+          {/* Guest Menu */}
+          <View style={styles.menuContainer}>
+            <MenuItem
+              icon="help"
+              iconBg={COLORS.gray100}
+              title="Ayuda y soporte"
+              subtitle="Preguntas frecuentes"
+              onPress={() => stackNav?.navigate('Help')}
+            />
+            <MenuItem
+              icon="info"
+              iconBg={COLORS.gray100}
+              title="Acerca de MedTrace"
+              subtitle="Versión 1.0.0"
+              onPress={() => stackNav?.navigate('About')}
+            />
+            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+              <Text style={styles.loginButtonText}>Iniciar Sesión / Registrarse</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -91,8 +143,6 @@ export default function ProfileScreen() {
           <View style={styles.statsGrid}>
             <TouchableOpacity
               style={styles.statCard}
-              // onPress={() => stackNav?.navigate('History')}
-              // TODO: Habilitar cuando la ruta 'History' esté registrada en el Stack
               onPress={() => {}}
             >
               <Text style={[styles.statNumber, { color: COLORS.success }]}>24</Text>
@@ -109,8 +159,6 @@ export default function ProfileScreen() {
 
             <TouchableOpacity
               style={styles.statCard}
-              // onPress={() => stackNav?.navigate('History')}
-              // TODO: Habilitar cuando la ruta 'History' esté registrada en el Stack
               onPress={() => {}}
             >
               <Text style={[styles.statNumber, { color: COLORS.gray700 }]}>1</Text>
@@ -136,16 +184,6 @@ export default function ProfileScreen() {
             subtitle="Configurar alertas"
             onPress={() => stackNav?.navigate('NotificationsSettings')}
           />
-
-          {/*
-          <MenuItem
-            icon="clock"
-            iconBg={COLORS.gray100}
-            title="Historial completo"
-            subtitle="Ver todas las verificaciones"
-            onPress={() => stackNav?.navigate('History')}
-          />
-          */}
 
           <MenuItem
             icon="lock"
@@ -307,5 +345,19 @@ const styles = StyleSheet.create({
     fontSize: SIZES.base,
     fontWeight: '600',
     color: COLORS.error,
+  },
+  loginButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 24,
+    ...SHADOWS.medium,
+  },
+  loginButtonText: {
+    fontSize: SIZES.base,
+    fontWeight: '600',
+    color: COLORS.white,
   },
 });

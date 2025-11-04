@@ -78,16 +78,15 @@ function MainTabs({ route }: NativeStackScreenProps<RootStackParamList, 'MainTab
           ),
         }}
       />
-      {!isGuest && (
-        <Tab.Screen
-          name="Profile"
-          component={ProfileScreen}
-          options={{
-            tabBarLabel: 'Perfil',
-            tabBarIcon: ({ focused }) => <TabIcon focused={focused} />,
-          }}
-        />
-      )}
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarLabel: isGuest ? 'Perfil (invitado)' : 'Perfil',
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} />,
+        }}
+        initialParams={{ guest: isGuest }}
+      />
     </Tab.Navigator>
   );
 }
