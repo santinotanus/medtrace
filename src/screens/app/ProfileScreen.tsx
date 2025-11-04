@@ -8,12 +8,17 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types';
+import { useNavigation } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { MainTabParamList, RootStackParamList } from '../../types';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'MainTabs'>;
+// Tipado
+type TabNav = BottomTabNavigationProp<MainTabParamList, 'Profile'>;
+type RootNav = NativeStackNavigationProp<RootStackParamList>;
 
+// Componente individual del menú
 interface MenuItemProps {
   icon: string;
   iconBg: string;
@@ -43,21 +48,21 @@ const MenuItem: React.FC<MenuItemProps> = ({
   </TouchableOpacity>
 );
 
-export default function ProfileScreen({ navigation }: Props) {
+export default function ProfileScreen() {
+  const tabNav = useNavigation<TabNav>();
+  const stackNav = tabNav.getParent<RootNav>();
+
   const handleLogout = () => {
     Alert.alert(
       'Cerrar Sesión',
       '¿Estás seguro que deseas cerrar sesión?',
       [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
+        { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Cerrar Sesión',
           style: 'destructive',
           onPress: () => {
-            navigation.reset({
+            stackNav?.reset({
               index: 0,
               routes: [{ name: 'Login' }],
             });
@@ -70,7 +75,7 @@ export default function ProfileScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Profile Header */}
+        {/* Header del perfil */}
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
@@ -81,12 +86,14 @@ export default function ProfileScreen({ navigation }: Props) {
           <Text style={styles.userEmail}>maria.gonzalez@email.com</Text>
         </View>
 
-        {/* Stats */}
+        {/* Estadísticas */}
         <View style={styles.statsContainer}>
           <View style={styles.statsGrid}>
             <TouchableOpacity
               style={styles.statCard}
-              onPress={() => navigation.navigate('History' as any)}
+              // onPress={() => stackNav?.navigate('History')}
+              // TODO: Habilitar cuando la ruta 'History' esté registrada en el Stack
+              onPress={() => {}}
             >
               <Text style={[styles.statNumber, { color: COLORS.success }]}>24</Text>
               <Text style={styles.statLabel}>Verificados</Text>
@@ -94,7 +101,7 @@ export default function ProfileScreen({ navigation }: Props) {
 
             <TouchableOpacity
               style={styles.statCard}
-              onPress={() => navigation.navigate('Alerts' as any)}
+              onPress={() => stackNav?.navigate('Alerts')}
             >
               <Text style={[styles.statNumber, { color: COLORS.primary }]}>3</Text>
               <Text style={styles.statLabel}>Alertas</Text>
@@ -102,7 +109,9 @@ export default function ProfileScreen({ navigation }: Props) {
 
             <TouchableOpacity
               style={styles.statCard}
-              onPress={() => navigation.navigate('History' as any)}
+              // onPress={() => stackNav?.navigate('History')}
+              // TODO: Habilitar cuando la ruta 'History' esté registrada en el Stack
+              onPress={() => {}}
             >
               <Text style={[styles.statNumber, { color: COLORS.gray700 }]}>1</Text>
               <Text style={styles.statLabel}>Reportes</Text>
@@ -110,14 +119,14 @@ export default function ProfileScreen({ navigation }: Props) {
           </View>
         </View>
 
-        {/* Menu Items */}
+        {/* Menú */}
         <View style={styles.menuContainer}>
           <MenuItem
             icon="user"
             iconBg={COLORS.primaryLight}
             title="Datos personales"
             subtitle="Editar información"
-            onPress={() => navigation.navigate('Settings' as any)}
+            onPress={() => stackNav?.navigate('Settings')}
           />
 
           <MenuItem
@@ -125,23 +134,25 @@ export default function ProfileScreen({ navigation }: Props) {
             iconBg={COLORS.successLight}
             title="Notificaciones"
             subtitle="Configurar alertas"
-            onPress={() => navigation.navigate('NotificationsSettings' as any)}
+            onPress={() => stackNav?.navigate('NotificationsSettings')}
           />
 
+          {/*
           <MenuItem
             icon="clock"
             iconBg={COLORS.gray100}
             title="Historial completo"
             subtitle="Ver todas las verificaciones"
-            onPress={() => navigation.navigate('History' as any)}
+            onPress={() => stackNav?.navigate('History')}
           />
+          */}
 
           <MenuItem
             icon="lock"
             iconBg={COLORS.gray100}
             title="Privacidad y seguridad"
             subtitle="Gestionar permisos"
-            onPress={() => navigation.navigate('Privacy' as any)}
+            onPress={() => stackNav?.navigate('Privacy')}
           />
 
           <MenuItem
@@ -149,7 +160,7 @@ export default function ProfileScreen({ navigation }: Props) {
             iconBg={COLORS.gray100}
             title="Ayuda y soporte"
             subtitle="Preguntas frecuentes"
-            onPress={() => navigation.navigate('Help' as any)}
+            onPress={() => stackNav?.navigate('Help')}
           />
 
           <MenuItem
@@ -157,13 +168,11 @@ export default function ProfileScreen({ navigation }: Props) {
             iconBg={COLORS.gray100}
             title="Acerca de MedTrace"
             subtitle="Versión 1.0.0"
-            onPress={() => navigation.navigate('About' as any)}
+            onPress={() => stackNav?.navigate('About')}
           />
 
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={handleLogout}
-          >
+          {/* Botón de cerrar sesión */}
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Text style={styles.logoutText}>Cerrar Sesión</Text>
           </TouchableOpacity>
         </View>

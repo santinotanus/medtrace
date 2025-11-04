@@ -1,10 +1,12 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect } from 'react';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, StyleSheet } from 'react-native';
 import { RootStackParamList, MainTabParamList } from '../types';
 import { COLORS } from '../constants/theme';
+
+import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 // Auth Screens
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -24,7 +26,7 @@ import ScanResultAlertScreen from '../screens/app/ScanResultAlertScreen';
 import AlertsScreen from '../screens/app/AlertsScreen';
 import ReportScreen from '../screens/app/ReportScreen';
 import AlertDetailScreen from '../screens/app/AlertDetailScreen';
-import HistoryScreen from '../screens/app/HistoryScreen';
+//import HistoryScreen from '../screens/app/HistoryScreen';
 import SettingsScreen from '../screens/app/SettingsScreen';
 import NotificationsSettingsScreen from '../screens/app/NotificationsSettingsScreen';
 import PrivacyScreen from '../screens/app/PrivacyScreen';
@@ -40,7 +42,8 @@ const TabIcon = ({ focused }: { focused: boolean }) => (
 );
 
 // Main Tabs Navigator
-function MainTabs() {
+function MainTabs({ route }: NativeStackScreenProps<RootStackParamList, 'MainTabs'>) {
+  const isGuest = route?.params?.guest === true;
   return (
     <Tab.Navigator
       screenOptions={{
@@ -59,6 +62,7 @@ function MainTabs() {
           tabBarLabel: 'Inicio',
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} />,
         }}
+        initialParams={{ guest: isGuest }}
       />
       <Tab.Screen
         name="Scan"
@@ -74,14 +78,16 @@ function MainTabs() {
           ),
         }}
       />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarLabel: 'Perfil',
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} />,
-        }}
-      />
+      {!isGuest && (
+        <Tab.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{
+            tabBarLabel: 'Perfil',
+            tabBarIcon: ({ focused }) => <TabIcon focused={focused} />,
+          }}
+        />
+      )}
     </Tab.Navigator>
   );
 }
@@ -106,10 +112,17 @@ export default function AppNavigator() {
         <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
         <Stack.Screen name="PasswordSuccess" component={PasswordSuccessScreen} />
 
+        {/* Pantallas extra del Stack (a las que navega Profile) */}
+         {/*<Stack.Screen name="History" component={HistoryScreen} />*/}
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="NotificationsSettings" component={NotificationsSettingsScreen} />
+        <Stack.Screen name="Privacy" component={PrivacyScreen} />
+        <Stack.Screen name="Help" component={HelpScreen} />
+        <Stack.Screen name="About" component={AboutScreen} />
         {/* Main App */}
         <Stack.Screen name="MainTabs" component={MainTabs} />
 
-        {/* Modal Screens */}
+        {/* Modales / resultados */}
         <Stack.Screen
           name="Scanner"
           component={ScannerScreen}
@@ -125,13 +138,26 @@ export default function AppNavigator() {
           component={ScanResultAlertScreen}
           options={{ presentation: 'modal' }}
         />
-        <Stack.Screen
-          name="Report"
-          component={ReportScreen}
-        />
+        <Stack.Screen name="Report" component={ReportScreen} />
+        <Stack.Screen name="Alerts" component={AlertsScreen} />
+        <Stack.Screen name="AlertDetail" component={AlertDetailScreen} />
+
+        {/* Logout (resetea al Login) */}
+        <Stack.Screen name="Logout" component={LogoutScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
+}
+
+function LogoutScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  useEffect(() => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  }, [navigation]);
+  return null;
 }
 
 const styles = StyleSheet.create({
@@ -168,10 +194,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,

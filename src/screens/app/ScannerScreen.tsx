@@ -7,46 +7,50 @@ import {
   SafeAreaView,
   Animated,
 } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types';
+
+import type { CompositeScreenProps } from '@react-navigation/native';
+import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { useNavigation } from '@react-navigation/native';
+
+import { RootStackParamList, MainTabParamList } from '../../types';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Scanner'>;
+type Props = CompositeScreenProps<
+  NativeStackScreenProps<RootStackParamList, 'Scanner'>,
+  BottomTabScreenProps<MainTabParamList, 'Scan'>
+>;
 
 export default function ScannerScreen({ navigation }: Props) {
   const scanLineAnim = React.useRef(new Animated.Value(0)).current;
 
+  const rootNav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   useEffect(() => {
     // Animación de línea de escaneo
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(scanLineAnim, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scanLineAnim, {
-          toValue: 0,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
+        Animated.timing(scanLineAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
+        Animated.timing(scanLineAnim, { toValue: 0, duration: 2000, useNativeDriver: true }),
       ])
-    ).start();
+    );
+    loop.start();
 
     // Simular escaneo exitoso después de 3 segundos
     const timer = setTimeout(() => {
-      // Resultado aleatorio: 70% seguro, 30% alerta
       const isSafe = Math.random() > 0.3;
-
       if (isSafe) {
-        navigation.replace('ScanResultSafe', {});
+        rootNav.replace('ScanResultSafe');   // << usar rootNav (Stack), no navigation del Tab
       } else {
-        navigation.replace('ScanResultAlert', {});
+        rootNav.replace('ScanResultAlert');  // << idem
       }
     }, 3000);
 
-    return () => clearTimeout(timer);
-  }, [navigation]);
+    return () => {
+      loop.stop();
+      clearTimeout(timer);
+    };
+  }, [rootNav, scanLineAnim]);
 
   const translateY = scanLineAnim.interpolate({
     inputRange: [0, 1],
@@ -68,7 +72,7 @@ export default function ScannerScreen({ navigation }: Props) {
         <Text style={styles.headerTitle}>Escanear Medicamento</Text>
         <TouchableOpacity
           style={styles.headerButton}
-          onPress={() => navigation.navigate('Help' as any)}
+          onPress={() => rootNav.navigate('Help')}
         >
           <View style={styles.infoIcon}>
             <Text style={styles.infoText}>i</Text>
@@ -89,19 +93,14 @@ export default function ScannerScreen({ navigation }: Props) {
         {/* Scan Frame */}
         <View style={styles.scanFrame}>
           <View style={styles.frameContainer}>
-            {/* Corner borders */}
+            {/* Corners */}
             <View style={[styles.corner, styles.cornerTopLeft]} />
             <View style={[styles.corner, styles.cornerTopRight]} />
             <View style={[styles.corner, styles.cornerBottomLeft]} />
             <View style={[styles.corner, styles.cornerBottomRight]} />
 
             {/* Scanning line */}
-            <Animated.View
-              style={[
-                styles.scanLine,
-                { transform: [{ translateY }] },
-              ]}
-            />
+            <Animated.View style={[styles.scanLine, { transform: [{ translateY }] }]} />
           </View>
         </View>
 

@@ -11,7 +11,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'MainTabs'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'Alerts'>;
 
 interface AlertItem {
   id: string;
@@ -90,9 +90,22 @@ export default function AlertsScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header con botón volver */}
       <View style={styles.header}>
-        <Text style={styles.title}>Alertas Sanitarias</Text>
-        <Text style={styles.subtitle}>Mantente informado sobre medicamentos</Text>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <View style={styles.backIcon} />
+          </TouchableOpacity>
+          <View>
+            <Text style={styles.title}>Alertas Sanitarias</Text>
+            <Text style={styles.subtitle}>
+              Mantente informado sobre medicamentos
+            </Text>
+          </View>
+        </View>
       </View>
 
       {/* Tabs */}
@@ -127,11 +140,8 @@ export default function AlertsScreen({ navigation }: Props) {
         </View>
       </View>
 
-      {/* Alerts List */}
-      <ScrollView
-        style={styles.alertsList}
-        showsVerticalScrollIndicator={false}
-      >
+      {/* Lista de alertas */}
+      <ScrollView style={styles.alertsList} showsVerticalScrollIndicator={false}>
         {alerts.map((alert) => {
           const style = getAlertStyle(alert.type);
           return (
@@ -142,10 +152,16 @@ export default function AlertsScreen({ navigation }: Props) {
             >
               <View style={styles.alertHeader}>
                 <View
-                  style={[styles.alertIconContainer, { backgroundColor: style.iconBg }]}
+                  style={[
+                    styles.alertIconContainer,
+                    { backgroundColor: style.iconBg },
+                  ]}
                 >
                   <View
-                    style={[styles.alertIcon, { backgroundColor: style.iconColor }]}
+                    style={[
+                      styles.alertIcon,
+                      { backgroundColor: style.iconColor },
+                    ]}
                   />
                 </View>
                 <View style={styles.alertContent}>
@@ -187,14 +203,30 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  backButton: {
+    padding: 8,
+  },
+  backIcon: {
+    width: 14,
+    height: 14,
+    borderLeftWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: COLORS.gray900,
+    transform: [{ rotate: '45deg' }],
+  },
   title: {
-    fontSize: SIZES.xxl,
+    fontSize: SIZES.xl,
     fontWeight: 'bold',
     color: COLORS.primary,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   subtitle: {
-    fontSize: SIZES.base,
+    fontSize: SIZES.sm,
     color: COLORS.gray600,
   },
   tabsContainer: {

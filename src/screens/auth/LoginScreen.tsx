@@ -31,7 +31,7 @@ export default function LoginScreen({ navigation }: Props) {
   };
 
   const handleGuestMode = () => {
-    navigation.replace('MainTabs');
+    navigation.replace('MainTabs', { guest: true });
   };
 
   return (

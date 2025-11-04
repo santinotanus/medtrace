@@ -7,13 +7,28 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types';
+
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import type { CompositeScreenProps } from '@react-navigation/native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+
+import type { MainTabParamList, RootStackParamList } from '../../types';
+
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'MainTabs'>;
+type HomeProps = CompositeScreenProps<
+  BottomTabScreenProps<MainTabParamList, 'Home'>,
+  NativeStackScreenProps<RootStackParamList>
+>;
 
-export default function HomeScreen({ navigation }: Props) {
+export default function HomeScreen({ navigation, route }: HomeProps) {
+  const isGuest = route?.params?.guest === true;
+
+  const userName = isGuest ? 'Invitado' : 'María González';
+  const stats = isGuest
+    ? { verified: '-', alerts: '-', reports: '-' }
+    : { verified: 24, alerts: 3, reports: 1 };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -21,35 +36,37 @@ export default function HomeScreen({ navigation }: Props) {
         <View style={styles.header}>
           <View>
             <Text style={styles.welcomeText}>Bienvenido</Text>
-            <Text style={styles.userName}>María González</Text>
+            <Text style={styles.userName}>{userName}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.notificationButton}
-            onPress={() => navigation.navigate('Alerts' as any)}
-          >
-            <View style={styles.bellIcon}>
-              <View style={styles.bellTop} />
-              <View style={styles.bellBody} />
-            </View>
-            <View style={styles.notificationBadge} />
-          </TouchableOpacity>
+          {!isGuest && ( 
+            <TouchableOpacity
+              style={styles.notificationButton}
+              onPress={() => navigation.navigate('Alerts' as any)}
+            >
+              <View style={styles.bellIcon}>
+                <View style={styles.bellTop} />
+                <View style={styles.bellBody} />
+              </View>
+              <View style={styles.notificationBadge} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Alert Banner - Clickeable */}
-        <TouchableOpacity
-          style={styles.alertBanner}
-          onPress={() => navigation.navigate('AlertDetail' as any)}
-        >
-          <View style={styles.alertIconContainer}>
-            <View style={styles.alertTriangle} />
-          </View>
-          <View style={styles.alertContent}>
-            <Text style={styles.alertTitle}>Alerta Activa</Text>
-            <Text style={styles.alertMessage}>
-              Ibuprofeno 600mg - Lote X2847 retirado del mercado
-            </Text>
-          </View>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.alertBanner}
+            onPress={() => navigation.navigate('AlertDetail' as any)}
+          >
+            <View style={styles.alertIconContainer}>
+              <View style={styles.alertTriangle} />
+            </View>
+            <View style={styles.alertContent}>
+              <Text style={styles.alertTitle}>Alerta Activa</Text>
+              <Text style={styles.alertMessage}>
+                Ibuprofeno 600mg - Lote X2847 retirado del mercado
+              </Text>
+            </View>
+          </TouchableOpacity>
 
         {/* Quick Actions */}
         <View style={styles.section}>
@@ -58,7 +75,7 @@ export default function HomeScreen({ navigation }: Props) {
             {/* Scan QR Button */}
             <TouchableOpacity
               style={styles.quickActionPrimary}
-              onPress={() => navigation.navigate('Scanner', {})}
+              onPress={() => navigation.navigate('Scanner')}
             >
               <View style={styles.qrIconContainer}>
                 <View style={styles.qrSquare1} />
@@ -70,15 +87,17 @@ export default function HomeScreen({ navigation }: Props) {
             </TouchableOpacity>
 
             {/* Report Button */}
-            <TouchableOpacity
-              style={styles.quickActionSecondary}
-              onPress={() => navigation.navigate('Report', {})}
-            >
-              <View style={styles.reportIconContainer}>
-                <View style={styles.reportTriangle} />
-              </View>
-              <Text style={styles.quickActionTextSecondary}>Reportar</Text>
-            </TouchableOpacity>
+            {!isGuest && ( 
+              <TouchableOpacity
+                style={styles.quickActionSecondary}
+                onPress={() => navigation.navigate('Report')}
+              >
+                <View style={styles.reportIconContainer}>
+                  <View style={styles.reportTriangle} />
+                </View>
+                <Text style={styles.quickActionTextSecondary}>Reportar</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -91,7 +110,7 @@ export default function HomeScreen({ navigation }: Props) {
               onPress={() => navigation.navigate('History' as any)}
             >
               <Text style={[styles.statNumber, { color: COLORS.success }]}>
-                24
+                {stats.verified}
               </Text>
               <Text style={styles.statLabel}>Verificados</Text>
             </TouchableOpacity>
@@ -101,7 +120,7 @@ export default function HomeScreen({ navigation }: Props) {
               onPress={() => navigation.navigate('Alerts' as any)}
             >
               <Text style={[styles.statNumber, { color: COLORS.primary }]}>
-                3
+                {stats.alerts}
               </Text>
               <Text style={styles.statLabel}>Alertas</Text>
             </TouchableOpacity>
@@ -111,7 +130,7 @@ export default function HomeScreen({ navigation }: Props) {
               onPress={() => navigation.navigate('History' as any)}
             >
               <Text style={[styles.statNumber, { color: COLORS.gray700 }]}>
-                1
+                {stats.reports}
               </Text>
               <Text style={styles.statLabel}>Reportes</Text>
             </TouchableOpacity>
@@ -119,44 +138,46 @@ export default function HomeScreen({ navigation }: Props) {
         </View>
 
         {/* Recent Activity */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Actividad Reciente</Text>
-          <View style={styles.activityList}>
-            {/* Activity Item 1 - Clickeable */}
-            <TouchableOpacity
-              style={styles.activityItem}
-              onPress={() => navigation.navigate('ScanResultSafe', {})}
-            >
-              <View style={styles.activityIconContainer}>
-                <View style={styles.checkIcon} />
-              </View>
-              <View style={styles.activityContent}>
-                <Text style={styles.activityTitle}>Paracetamol 500mg</Text>
-                <Text style={styles.activitySubtitle}>
-                  Verificado - Lote A1234
-                </Text>
-                <Text style={styles.activityTime}>Hace 2 horas</Text>
-              </View>
-            </TouchableOpacity>
+        {!isGuest && ( 
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Actividad Reciente</Text>
+            <View style={styles.activityList}>
+              {/* Activity Item 1 - Clickeable */}
+              <TouchableOpacity
+                style={styles.activityItem}
+                onPress={() => navigation.navigate('ScanResultSafe')}
+              >
+                <View style={styles.activityIconContainer}>
+                  <View style={styles.checkIcon} />
+                </View>
+                <View style={styles.activityContent}>
+                  <Text style={styles.activityTitle}>Paracetamol 500mg</Text>
+                  <Text style={styles.activitySubtitle}>
+                    Verificado - Lote A1234
+                  </Text>
+                  <Text style={styles.activityTime}>Hace 2 horas</Text>
+                </View>
+              </TouchableOpacity>
 
-            {/* Activity Item 2 - Clickeable */}
-            <TouchableOpacity
-              style={styles.activityItem}
-              onPress={() => navigation.navigate('ScanResultSafe', {})}
-            >
-              <View style={styles.activityIconContainer}>
-                <View style={styles.checkIcon} />
-              </View>
-              <View style={styles.activityContent}>
-                <Text style={styles.activityTitle}>Amoxicilina 875mg</Text>
-                <Text style={styles.activitySubtitle}>
-                  Verificado - Lote B5678
-                </Text>
-                <Text style={styles.activityTime}>Hace 1 día</Text>
-              </View>
-            </TouchableOpacity>
+              {/* Activity Item 2 - Clickeable */}
+              <TouchableOpacity
+                style={styles.activityItem}
+                onPress={() => navigation.navigate('ScanResultSafe')}
+              >
+                <View style={styles.activityIconContainer}>
+                  <View style={styles.checkIcon} />
+                </View>
+                <View style={styles.activityContent}>
+                  <Text style={styles.activityTitle}>Amoxicilina 875mg</Text>
+                  <Text style={styles.activitySubtitle}>
+                    Verificado - Lote B5678
+                  </Text>
+                  <Text style={styles.activityTime}>Hace 1 día</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

@@ -12,7 +12,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'MainTabs'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
 export default function SettingsScreen({ navigation }: Props) {
   const [darkMode, setDarkMode] = React.useState(false);

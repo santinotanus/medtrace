@@ -12,7 +12,7 @@ import { RootStackParamList } from '../../types';
 import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'MainTabs'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'AlertDetail'>;
 
 export default function AlertDetailScreen({ navigation }: Props) {
   return (
@@ -161,7 +161,7 @@ export default function AlertDetailScreen({ navigation }: Props) {
           <Button
             title="Reportar que lo consumí"
             variant="danger"
-            onPress={() => navigation.navigate('Report', {})}
+            onPress={() => navigation.navigate('Report')}
           />
           <Button
             title="Descargar Comunicado Oficial"

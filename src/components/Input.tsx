@@ -39,7 +39,7 @@ export default function Input({
         style={[
           styles.inputContainer,
           isFocused && styles.inputContainerFocused,
-          error && styles.inputContainerError,
+          !!error && styles.inputContainerError,
         ]}
       >
         <TextInput

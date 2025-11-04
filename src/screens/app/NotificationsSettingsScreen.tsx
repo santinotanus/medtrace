@@ -12,7 +12,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'MainTabs'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'NotificationsSettings'>;
 
 export default function NotificationsSettingsScreen({ navigation }: Props) {
   const [allNotifications, setAllNotifications] = useState(true);

@@ -51,31 +51,39 @@ export interface TraceabilityStep {
 }
 
 export type RootStackParamList = {
-  // Auth
+  Onboarding: undefined;
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
-  VerifyCode: { email: string };
-  ResetPassword: { code: string };
+  VerifyCode: undefined;
+  ResetPassword: undefined;
   PasswordSuccess: undefined;
 
-  // Onboarding
-  Onboarding: undefined;
+  MainTabs: { guest?: boolean } | undefined;
 
-  // Main
-  MainTabs: undefined;
-
-  // Scanner
+  // Modales / resultados
   Scanner: undefined;
-  ScanResultSafe: { medicine: Medicine };
-  ScanResultAlert: { medicine: Medicine; alert: Alert };
+  ScanResultSafe: undefined;
+  ScanResultAlert: undefined;
 
-  // Report
-  Report: { medicine?: Medicine };
+  // App
+  Report: undefined;
+  Alerts: undefined;
+  AlertDetail: undefined;
+
+  Settings: undefined;
+  NotificationsSettings: undefined;
+  Privacy: undefined;
+  Help: undefined;
+  About: undefined;
+
+  // History: undefined;
+
+  Logout: undefined;
 };
 
 export type MainTabParamList = {
-  Home: undefined;
+  Home: { guest?: boolean } | undefined;
   Scan: undefined;
   Profile: undefined;
 };

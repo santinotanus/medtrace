@@ -133,7 +133,7 @@ export default function ScanResultAlertScreen({ navigation }: Props) {
           <Button
             title="Reportar Problema"
             variant="danger"
-            onPress={() => navigation.navigate('Report', {})}
+            onPress={() => navigation.navigate('Report')}
           />
           <Button
             title="Ver Comunicado ANMAT"

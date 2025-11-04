@@ -11,7 +11,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'MainTabs'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'About'>;
 
 export default function AboutScreen({ navigation }: Props) {
   return (
