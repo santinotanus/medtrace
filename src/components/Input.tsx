@@ -55,6 +55,7 @@ export default function Input({
           <TouchableOpacity
             style={styles.iconButton}
             onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+            activeOpacity={0.7}
           >
             <View
               style={[
