@@ -14,14 +14,16 @@ import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanResultAlert'>;
 
-export default function ScanResultAlertScreen({ navigation }: Props) {
+export default function ScanResultAlertScreen({ navigation, route }: Props) {
+  const isGuest = route.params?.guest;
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.popToTop()}
         >
           <View style={styles.headerIcon} />
         </TouchableOpacity>

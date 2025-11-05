@@ -67,6 +67,12 @@ function MainTabs({ route }: NativeStackScreenProps<RootStackParamList, 'MainTab
       <Tab.Screen
         name="Scan"
         component={ScannerScreen}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.getParent<NativeStackNavigationProp<RootStackParamList>>()?.navigate('Scanner', { guest: isGuest });
+          },
+        })}
         options={{
           tabBarLabel: 'Escanear',
           tabBarIcon: ({ focused }) => (

@@ -48,14 +48,16 @@ const traceSteps: TraceStep[] = [
   },
 ];
 
-export default function ScanResultSafeScreen({ navigation }: Props) {
+export default function ScanResultSafeScreen({ navigation, route }: Props) {
+  const isGuest = route.params?.guest;
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.popToTop()}
         >
           <View style={styles.headerIcon} />
         </TouchableOpacity>

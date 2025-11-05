@@ -21,8 +21,9 @@ type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, 'Scan'>
 >;
 
-export default function ScannerScreen({ navigation }: Props) {
+export default function ScannerScreen({ navigation, route }: Props) {
   const scanLineAnim = React.useRef(new Animated.Value(0)).current;
+  const isGuest = route.params?.guest;
 
   const rootNav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -40,9 +41,9 @@ export default function ScannerScreen({ navigation }: Props) {
     const timer = setTimeout(() => {
       const isSafe = Math.random() > 0.3;
       if (isSafe) {
-        rootNav.replace('ScanResultSafe');   // << usar rootNav (Stack), no navigation del Tab
+        rootNav.navigate('ScanResultSafe', { guest: isGuest });
       } else {
-        rootNav.replace('ScanResultAlert');  // << idem
+        rootNav.navigate('ScanResultAlert', { guest: isGuest });
       }
     }, 3000);
 
@@ -50,7 +51,7 @@ export default function ScannerScreen({ navigation }: Props) {
       loop.stop();
       clearTimeout(timer);
     };
-  }, [rootNav, scanLineAnim]);
+  }, [rootNav, scanLineAnim, isGuest]);
 
   const translateY = scanLineAnim.interpolate({
     inputRange: [0, 1],

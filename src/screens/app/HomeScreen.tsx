@@ -75,7 +75,7 @@ export default function HomeScreen({ navigation, route }: HomeProps) {
             {/* Scan QR Button */}
             <TouchableOpacity
               style={styles.quickActionPrimary}
-              onPress={() => navigation.navigate('Scanner')}
+              onPress={() => navigation.navigate('Scanner', { guest: isGuest })}
             >
               <View style={styles.qrIconContainer}>
                 <View style={styles.qrSquare1} />
