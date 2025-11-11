@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,18 +8,25 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types';
+import { RootStackParamList, AlertRecord } from '../../types';
 import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { formatDate } from '../../utils/format';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanResultAlert'>;
 
 export default function ScanResultAlertScreen({ navigation, route }: Props) {
-  const isGuest = route.params?.guest;
+  const { batch } = route.params;
+
+  const currentAlert = useMemo<AlertRecord | null>(() => {
+    if (batch.alerts && batch.alerts.length > 0) {
+      return batch.alerts[0];
+    }
+    return null;
+  }, [batch.alerts]);
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerButton}
@@ -28,119 +35,96 @@ export default function ScanResultAlertScreen({ navigation, route }: Props) {
           <View style={styles.headerIcon} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Resultado</Text>
-        <TouchableOpacity style={styles.headerButton}>
-          <View style={styles.headerIcon} />
-        </TouchableOpacity>
+        <View style={styles.headerButton} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Alert Status */}
         <View style={styles.statusContainer}>
           <View style={styles.alertCard}>
             <View style={styles.alertIconContainer}>
               <View style={styles.alertIcon} />
             </View>
             <Text style={styles.alertTitle}>⚠️ NO USAR</Text>
-            <Text style={styles.alertSubtitle}>Medicamento con alerta sanitaria</Text>
+            <Text style={styles.alertSubtitle}>
+              Este lote tiene una alerta sanitaria vigente
+            </Text>
           </View>
         </View>
 
-        {/* Alert Details */}
         <View style={styles.section}>
           <View style={styles.detailsCard}>
             <View style={styles.detailsHeader}>
               <View style={styles.detailsIcon} />
               <View style={styles.detailsHeaderText}>
-                <Text style={styles.detailsTitle}>Alerta Sanitaria Crítica</Text>
-                <Text style={styles.detailsDate}>Emitida por ANMAT - 25/03/2024</Text>
+                <Text style={styles.detailsTitle}>
+                  {currentAlert?.title ?? 'Lote en revisión'}
+                </Text>
+                <Text style={styles.detailsDate}>
+                  {currentAlert
+                    ? `Emitida ${formatDate(currentAlert.publishedAt, { includeTime: true })}`
+                    : 'Estado crítico reportado'}
+                </Text>
               </View>
             </View>
             <Text style={styles.detailsDescription}>
-              Este lote ha sido retirado del mercado por contaminación detectada
-              durante controles de calidad. NO consumir bajo ninguna circunstancia.
+              {currentAlert?.message ??
+                'Este lote fue marcado como no seguro. Por favor seguí las instrucciones para minimizar el riesgo.'}
             </Text>
-            <View style={styles.reasonBox}>
-              <Text style={styles.reasonText}>
-                Motivo: Contaminación con sustancias no autorizadas
-              </Text>
-            </View>
+            {currentAlert?.reason && (
+              <View style={styles.reasonBox}>
+                <Text style={styles.reasonText}>Motivo: {currentAlert.reason}</Text>
+              </View>
+            )}
           </View>
         </View>
 
-        {/* Medicine Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Información del Producto</Text>
           <View style={styles.infoCard}>
-            <Text style={styles.medicineTitle}>Ibuprofeno 600mg</Text>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Laboratorio</Text>
-              <Text style={styles.infoValue}>Lab. XYZ S.A.</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Lote</Text>
-              <Text style={[styles.infoValue, styles.infoValueDanger]}>X2847</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Vencimiento</Text>
-              <Text style={styles.infoValue}>08/2025</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Estado</Text>
-              <Text style={[styles.infoValue, styles.infoValueDanger]}>RETIRADO</Text>
-            </View>
+            <Text style={styles.medicineTitle}>
+              {batch.medicine?.name} {batch.medicine?.dosage}
+            </Text>
+            <InfoRow label="Laboratorio" value={batch.medicine?.laboratory ?? '—'} />
+            <InfoRow label="Lote" value={batch.batchNumber} highlight />
+            <InfoRow label="Vencimiento" value={formatDate(batch.expirationDate)} />
+            <InfoRow label="Estado" value={batch.status} highlight />
           </View>
         </View>
 
-        {/* Instructions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>¿Qué hacer?</Text>
           <View style={styles.instructionsCard}>
-            <View style={styles.instructionStep}>
-              <View style={styles.stepNumber}>
-                <Text style={styles.stepNumberText}>1</Text>
-              </View>
-              <Text style={styles.stepText}>
-                NO consumir el medicamento bajo ninguna circunstancia
-              </Text>
-            </View>
-            <View style={styles.instructionStep}>
-              <View style={styles.stepNumber}>
-                <Text style={styles.stepNumberText}>2</Text>
-              </View>
-              <Text style={styles.stepText}>
-                Devolver el producto a la farmacia donde lo adquirió
-              </Text>
-            </View>
-            <View style={styles.instructionStep}>
-              <View style={styles.stepNumber}>
-                <Text style={styles.stepNumberText}>3</Text>
-              </View>
-              <Text style={styles.stepText}>
-                Si ya lo consumió, consulte inmediatamente a su médico
-              </Text>
-            </View>
-            <View style={styles.instructionStep}>
-              <View style={styles.stepNumber}>
-                <Text style={styles.stepNumberText}>4</Text>
-              </View>
-              <Text style={styles.stepText}>
-                Reporte cualquier efecto adverso a través de la app
-              </Text>
-            </View>
+            {currentAlert?.recommendations && currentAlert.recommendations.length > 0 ? (
+              currentAlert.recommendations.map((rec, index) => (
+                <Instruction key={rec} index={index + 1} text={rec} />
+              ))
+            ) : (
+              <>
+                <Instruction index={1} text="NO consumir el medicamento bajo ninguna circunstancia." />
+                <Instruction index={2} text="Devolver el producto a la farmacia donde lo adquiriste." />
+                <Instruction index={3} text="Si ya lo consumiste, consultá inmediatamente a tu médico." />
+                <Instruction index={4} text="Reportá cualquier efecto adverso desde la app." />
+              </>
+            )}
           </View>
         </View>
 
-        {/* Actions */}
         <View style={styles.actionsContainer}>
           <Button
             title="Reportar Problema"
             variant="danger"
-            onPress={() => navigation.navigate('Report')}
+            onPress={() =>
+              navigation.navigate('Report', {
+                batchId: batch.id,
+                presetBatchNumber: batch.batchNumber,
+                presetMedicine: batch.medicine?.name,
+              })
+            }
           />
           <Button
             title="Ver Comunicado ANMAT"
             variant="secondary"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('AlertDetail', { alertId: currentAlert?.id ?? batch.id })}
             style={styles.secondaryButton}
           />
         </View>
@@ -148,6 +132,22 @@ export default function ScanResultAlertScreen({ navigation, route }: Props) {
     </SafeAreaView>
   );
 }
+
+const InfoRow = ({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) => (
+  <View style={styles.infoRow}>
+    <Text style={styles.infoLabel}>{label}</Text>
+    <Text style={[styles.infoValue, highlight && styles.infoValueDanger]}>{value}</Text>
+  </View>
+);
+
+const Instruction = ({ index, text }: { index: number; text: string }) => (
+  <View style={styles.instructionStep}>
+    <View style={styles.stepNumber}>
+      <Text style={styles.stepNumberText}>{index}</Text>
+    </View>
+    <Text style={styles.stepText}>{text}</Text>
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -217,7 +217,8 @@ const styles = StyleSheet.create({
   },
   alertSubtitle: {
     fontSize: SIZES.base,
-    color: COLORS.gray600,
+    color: COLORS.gray700,
+    textAlign: 'center',
   },
   section: {
     paddingHorizontal: 24,
@@ -231,50 +232,50 @@ const styles = StyleSheet.create({
   },
   detailsCard: {
     backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 24,
     ...SHADOWS.small,
   },
   detailsHeader: {
     flexDirection: 'row',
-    marginBottom: 16,
+    gap: 16,
   },
   detailsIcon: {
-    width: 24,
-    height: 24,
-    backgroundColor: COLORS.error,
-    borderRadius: 12,
-    marginRight: 12,
-    marginTop: 2,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.errorLight,
   },
   detailsHeaderText: {
     flex: 1,
   },
   detailsTitle: {
     fontSize: SIZES.base,
-    fontWeight: 'bold',
-    color: '#991B1B',
-    marginBottom: 4,
+    fontWeight: '700',
+    color: COLORS.gray900,
   },
   detailsDate: {
     fontSize: SIZES.sm,
     color: COLORS.gray500,
+    marginTop: 4,
   },
   detailsDescription: {
-    fontSize: SIZES.sm,
+    fontSize: SIZES.base,
     color: COLORS.gray700,
-    lineHeight: 20,
-    marginBottom: 16,
+    marginTop: 12,
+    lineHeight: 22,
   },
   reasonBox: {
-    backgroundColor: COLORS.errorLight,
-    borderRadius: 8,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
     padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.error,
+    marginTop: 12,
   },
   reasonText: {
-    fontSize: SIZES.sm,
+    color: COLORS.error,
     fontWeight: '600',
-    color: '#991B1B',
   },
   infoCard: {
     backgroundColor: COLORS.white,
@@ -307,40 +308,37 @@ const styles = StyleSheet.create({
   },
   instructionsCard: {
     backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 24,
+    borderRadius: 16,
+    padding: 16,
     ...SHADOWS.small,
   },
   instructionStep: {
     flexDirection: 'row',
-    marginBottom: 16,
+    gap: 12,
+    marginBottom: 12,
   },
   stepNumber: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: COLORS.primary,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.error,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
-    marginTop: 2,
   },
   stepNumberText: {
-    fontSize: SIZES.xs,
-    fontWeight: 'bold',
     color: COLORS.white,
+    fontWeight: '700',
   },
   stepText: {
     flex: 1,
-    fontSize: SIZES.sm,
-    color: COLORS.gray700,
-    lineHeight: 20,
+    color: COLORS.gray800,
   },
   actionsContainer: {
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    marginBottom: 32,
+    gap: 12,
   },
   secondaryButton: {
-    marginTop: 12,
+    marginTop: 8,
   },
 });

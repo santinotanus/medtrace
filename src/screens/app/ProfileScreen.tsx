@@ -8,17 +8,17 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainTabParamList, RootStackParamList } from '../../types';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { useAuth } from '../../hooks/useAuth';
+import { useUserStats } from '../../hooks/useUserStats';
 
 // Tipado
 type TabNav = BottomTabNavigationProp<MainTabParamList, 'Profile'>;
 type RootNav = NativeStackNavigationProp<RootStackParamList>;
-type ProfileRouteProp = RouteProp<MainTabParamList, 'Profile'>;
-
 // Componente individual del menú
 interface MenuItemProps {
   icon: string;
@@ -52,8 +52,17 @@ const MenuItem: React.FC<MenuItemProps> = ({
 export default function ProfileScreen() {
   const tabNav = useNavigation<TabNav>();
   const stackNav = tabNav.getParent<RootNav>();
-  const route = useRoute<ProfileRouteProp>();
-  const isGuest = route.params?.guest;
+  const { profile, isGuest, signOut, exitGuestMode } = useAuth();
+  const { stats, loading: statsLoading } = useUserStats();
+
+  const avatarInitials = profile?.name
+    ? profile.name
+        .split(' ')
+        .map((word) => word[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    : 'US';
 
   const handleLogout = () => {
     Alert.alert(
@@ -65,10 +74,7 @@ export default function ProfileScreen() {
           text: 'Cerrar Sesión',
           style: 'destructive',
           onPress: () => {
-            stackNav?.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            });
+            signOut();
           },
         },
       ]
@@ -76,10 +82,7 @@ export default function ProfileScreen() {
   };
 
   const handleLogin = () => {
-    stackNav?.reset({
-      index: 0,
-      routes: [{ name: 'Login' }],
-    });
+    exitGuestMode();
   };
 
   if (isGuest) {
@@ -131,11 +134,11 @@ export default function ProfileScreen() {
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>MG</Text>
+              <Text style={styles.avatarText}>{avatarInitials}</Text>
             </View>
           </View>
-          <Text style={styles.userName}>María González</Text>
-          <Text style={styles.userEmail}>maria.gonzalez@email.com</Text>
+          <Text style={styles.userName}>{profile?.name}</Text>
+          <Text style={styles.userEmail}>{profile?.email}</Text>
         </View>
 
         {/* Estadísticas */}
@@ -145,7 +148,9 @@ export default function ProfileScreen() {
               style={styles.statCard}
               onPress={() => {}}
             >
-              <Text style={[styles.statNumber, { color: COLORS.success }]}>24</Text>
+              <Text style={[styles.statNumber, { color: COLORS.success }]}>
+                {statsLoading && !stats ? '...' : stats?.verified ?? 0}
+              </Text>
               <Text style={styles.statLabel}>Verificados</Text>
             </TouchableOpacity>
 
@@ -153,7 +158,9 @@ export default function ProfileScreen() {
               style={styles.statCard}
               onPress={() => stackNav?.navigate('Alerts')}
             >
-              <Text style={[styles.statNumber, { color: COLORS.primary }]}>3</Text>
+              <Text style={[styles.statNumber, { color: COLORS.primary }]}>
+                {statsLoading && !stats ? '...' : stats?.alerts ?? 0}
+              </Text>
               <Text style={styles.statLabel}>Alertas</Text>
             </TouchableOpacity>
 
@@ -161,7 +168,9 @@ export default function ProfileScreen() {
               style={styles.statCard}
               onPress={() => {}}
             >
-              <Text style={[styles.statNumber, { color: COLORS.gray700 }]}>1</Text>
+              <Text style={[styles.statNumber, { color: COLORS.gray700 }]}>
+                {statsLoading && !stats ? '...' : stats?.reports ?? 0}
+              </Text>
               <Text style={styles.statLabel}>Reportes</Text>
             </TouchableOpacity>
           </View>

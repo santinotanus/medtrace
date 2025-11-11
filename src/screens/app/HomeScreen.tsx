@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,42 +6,131 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
-
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import type { MainTabParamList, RootStackParamList } from '../../types';
-
+import type {
+  MainTabParamList,
+  RootStackParamList,
+  AlertRecord,
+  ScanHistoryEntry,
+  BatchRecord,
+} from '../../types';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { useAuth } from '../../hooks/useAuth';
+import { useUserStats } from '../../hooks/useUserStats';
+import { supabase } from '../../lib/supabase';
+import { formatDate, formatRelativeTime } from '../../utils/format';
 
 type HomeProps = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, 'Home'>,
   NativeStackScreenProps<RootStackParamList>
 >;
 
-export default function HomeScreen({ navigation, route }: HomeProps) {
-  const isGuest = route?.params?.guest === true;
+export default function HomeScreen({ navigation }: HomeProps) {
+  const { profile, isGuest } = useAuth();
+  const { stats, loading: statsLoading, refresh: refreshStats } = useUserStats();
+  const [bannerAlert, setBannerAlert] = useState<AlertRecord | null>(null);
+  const [history, setHistory] = useState<ScanHistoryEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const userName = isGuest ? 'Invitado' : 'María González';
-  const stats = isGuest
-    ? { verified: '-', alerts: '-', reports: '-' }
-    : { verified: 24, alerts: 3, reports: 1 };
+  const fetchHomeData = useCallback(async () => {
+    if (isGuest) {
+      setBannerAlert(null);
+      setHistory([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const [alertRes, historyRes] = await Promise.all([
+      supabase
+        .from('alert')
+        .select(
+          `
+          *,
+          medicine:medicineId (*),
+          batch:batchId (*)
+        `,
+        )
+        .eq('isActive', true)
+        .order('publishedAt', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from('scan_history')
+        .select(
+          `
+          *,
+          batch:batchId (
+            *,
+            medicine:medicineId (*)
+          )
+        `,
+        )
+        .order('scannedAt', { ascending: false })
+        .limit(4),
+    ]);
+
+    if (!alertRes.error) {
+      setBannerAlert(alertRes.data as AlertRecord | null);
+    }
+    if (!historyRes.error && historyRes.data) {
+      setHistory(historyRes.data as ScanHistoryEntry[]);
+    }
+
+    setLoading(false);
+  }, [isGuest]);
+
+  useEffect(() => {
+    fetchHomeData();
+  }, [fetchHomeData]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([fetchHomeData(), refreshStats()]);
+    setRefreshing(false);
+  }, [fetchHomeData, refreshStats]);
+
+  const userName = useMemo(() => {
+    if (isGuest) return 'Invitado';
+    return profile?.name ?? 'Usuario';
+  }, [isGuest, profile]);
+
+  const statsDisplay = useMemo(
+    () => ({
+      verified: stats?.verified ?? '-',
+      alerts: stats?.alerts ?? '-',
+      reports: stats?.reports ?? '-',
+    }),
+    [stats],
+  );
+
+  const canReport = !isGuest;
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+      >
         <View style={styles.header}>
           <View>
             <Text style={styles.welcomeText}>Bienvenido</Text>
             <Text style={styles.userName}>{userName}</Text>
+            {isGuest && (
+              <Text style={styles.guestHint}>Inicia sesión para sincronizar tus datos y escaneos.</Text>
+            )}
           </View>
-          {!isGuest && ( 
+          {!isGuest && (
             <TouchableOpacity
               style={styles.notificationButton}
-              onPress={() => navigation.navigate('Alerts' as any)}
+              onPress={() => navigation.navigate('Alerts')}
             >
               <View style={styles.bellIcon}>
                 <View style={styles.bellTop} />
@@ -52,10 +141,17 @@ export default function HomeScreen({ navigation, route }: HomeProps) {
           )}
         </View>
 
-        {/* Alert Banner - Clickeable */}
+        {loading && !refreshing && (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color={COLORS.primary} />
+            <Text style={styles.loadingText}>Sincronizando datos...</Text>
+          </View>
+        )}
+
+        {bannerAlert && (
           <TouchableOpacity
             style={styles.alertBanner}
-            onPress={() => navigation.navigate('AlertDetail' as any)}
+            onPress={() => navigation.navigate('AlertDetail', { alertId: bannerAlert.id })}
           >
             <View style={styles.alertIconContainer}>
               <View style={styles.alertTriangle} />
@@ -63,19 +159,23 @@ export default function HomeScreen({ navigation, route }: HomeProps) {
             <View style={styles.alertContent}>
               <Text style={styles.alertTitle}>Alerta Activa</Text>
               <Text style={styles.alertMessage}>
-                Ibuprofeno 600mg - Lote X2847 retirado del mercado
+                {bannerAlert.title}
+                {bannerAlert.batch?.batchNumber ? ` - Lote ${bannerAlert.batch.batchNumber}` : ''}
+              </Text>
+              <Text style={styles.alertTimestamp}>
+                {formatRelativeTime(bannerAlert.publishedAt)}
               </Text>
             </View>
           </TouchableOpacity>
+        )}
 
-        {/* Quick Actions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
           <View style={styles.quickActionsGrid}>
-            {/* Scan QR Button */}
             <TouchableOpacity
-              style={styles.quickActionPrimary}
-              onPress={() => navigation.navigate('Scanner', { guest: isGuest })}
+              style={[styles.quickActionPrimary, isGuest && styles.quickActionDisabled]}
+              onPress={() => navigation.navigate('Scanner')}
+              disabled={isGuest}
             >
               <View style={styles.qrIconContainer}>
                 <View style={styles.qrSquare1} />
@@ -83,98 +183,107 @@ export default function HomeScreen({ navigation, route }: HomeProps) {
                 <View style={styles.qrSquare3} />
                 <View style={styles.qrSquare4} />
               </View>
-              <Text style={styles.quickActionTextPrimary}>Escanear QR</Text>
+              <Text style={styles.quickActionTextPrimary}>
+                {isGuest ? 'Inicia sesión para escanear' : 'Escanear QR'}
+              </Text>
             </TouchableOpacity>
 
-            {/* Report Button */}
-            {!isGuest && ( 
-              <TouchableOpacity
-                style={styles.quickActionSecondary}
-                onPress={() => navigation.navigate('Report')}
-              >
-                <View style={styles.reportIconContainer}>
-                  <View style={styles.reportTriangle} />
-                </View>
-                <Text style={styles.quickActionTextSecondary}>Reportar</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              style={[styles.quickActionSecondary, (!canReport || isGuest) && styles.quickActionDisabled]}
+              onPress={() => navigation.navigate('Report')}
+              disabled={!canReport}
+            >
+              <View style={styles.reportIconContainer}>
+                <View style={styles.reportTriangle} />
+              </View>
+              <Text style={styles.quickActionTextSecondary}>Reportar</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Stats - Clickeables */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Estadísticas</Text>
           <View style={styles.statsGrid}>
             <TouchableOpacity
               style={styles.statCard}
-              onPress={() => navigation.navigate('History' as any)}
+              disabled
             >
               <Text style={[styles.statNumber, { color: COLORS.success }]}>
-                {stats.verified}
+                {statsLoading && !stats ? '...' : statsDisplay.verified}
               </Text>
               <Text style={styles.statLabel}>Verificados</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.statCard}
-              onPress={() => navigation.navigate('Alerts' as any)}
+              onPress={() => navigation.navigate('Alerts')}
+              disabled={isGuest}
             >
               <Text style={[styles.statNumber, { color: COLORS.primary }]}>
-                {stats.alerts}
+                {statsLoading && !stats ? '...' : statsDisplay.alerts}
               </Text>
               <Text style={styles.statLabel}>Alertas</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.statCard}
-              onPress={() => navigation.navigate('History' as any)}
+              disabled
             >
               <Text style={[styles.statNumber, { color: COLORS.gray700 }]}>
-                {stats.reports}
+                {statsLoading && !stats ? '...' : statsDisplay.reports}
               </Text>
               <Text style={styles.statLabel}>Reportes</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Recent Activity */}
-        {!isGuest && ( 
+        {!isGuest && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Actividad Reciente</Text>
             <View style={styles.activityList}>
-              {/* Activity Item 1 - Clickeable */}
-              <TouchableOpacity
-                style={styles.activityItem}
-                onPress={() => navigation.navigate('ScanResultSafe')}
-              >
-                <View style={styles.activityIconContainer}>
-                  <View style={styles.checkIcon} />
-                </View>
-                <View style={styles.activityContent}>
-                  <Text style={styles.activityTitle}>Paracetamol 500mg</Text>
-                  <Text style={styles.activitySubtitle}>
-                    Verificado - Lote A1234
+              {history.length === 0 && (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyTitle}>Sin escaneos aún</Text>
+                  <Text style={styles.emptySubtitle}>
+                    Escanea un medicamento para ver el historial aquí.
                   </Text>
-                  <Text style={styles.activityTime}>Hace 2 horas</Text>
                 </View>
-              </TouchableOpacity>
-
-              {/* Activity Item 2 - Clickeable */}
-              <TouchableOpacity
-                style={styles.activityItem}
-                onPress={() => navigation.navigate('ScanResultSafe')}
-              >
-                <View style={styles.activityIconContainer}>
-                  <View style={styles.checkIcon} />
-                </View>
-                <View style={styles.activityContent}>
-                  <Text style={styles.activityTitle}>Amoxicilina 875mg</Text>
-                  <Text style={styles.activitySubtitle}>
-                    Verificado - Lote B5678
-                  </Text>
-                  <Text style={styles.activityTime}>Hace 1 día</Text>
-                </View>
-              </TouchableOpacity>
+              )}
+              {history.map((entry) => (
+                <TouchableOpacity
+                  key={entry.id}
+                  style={styles.activityItem}
+                  disabled={!entry.batch}
+                  onPress={() => {
+                    if (!entry.batch) return;
+                    navigation.navigate(
+                      entry.result === 'SAFE' ? 'ScanResultSafe' : 'ScanResultAlert',
+                      { batch: entry.batch as BatchRecord },
+                    );
+                  }}
+                >
+                  <View style={styles.activityIconContainer}>
+                    <View
+                      style={[
+                        styles.checkIcon,
+                        entry.result !== 'SAFE' && styles.activityIconAlert,
+                      ]}
+                    />
+                  </View>
+                  <View style={styles.activityContent}>
+                    <Text style={styles.activityTitle}>
+                      {entry.batch?.medicine?.name ?? 'Medicamento'}
+                    </Text>
+                    <Text style={styles.activitySubtitle}>
+                      {entry.batch?.medicine?.dosage ?? ''} - Lote{' '}
+                      {entry.batch?.batchNumber ?? '—'}
+                    </Text>
+                    <Text style={styles.activityTime}>
+                      {formatRelativeTime(entry.scannedAt)}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
         )}
@@ -201,19 +310,23 @@ const styles = StyleSheet.create({
     color: COLORS.gray500,
   },
   userName: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: SIZES.xxxl,
+    fontWeight: '700',
     color: COLORS.primary,
   },
+  guestHint: {
+    marginTop: 4,
+    color: COLORS.gray600,
+    fontSize: SIZES.sm,
+  },
   notificationButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: COLORS.white,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
-    ...SHADOWS.small,
+    ...SHADOWS.medium,
   },
   bellIcon: {
     width: 20,
@@ -221,22 +334,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bellTop: {
-    width: 4,
-    height: 4,
-    backgroundColor: COLORS.gray700,
-    borderRadius: 2,
-    marginBottom: 2,
+    width: 12,
+    height: 8,
+    borderTopLeftRadius: 6,
+    borderTopRightRadius: 6,
+    borderWidth: 2,
+    borderColor: COLORS.gray700,
   },
   bellBody: {
     width: 16,
-    height: 14,
+    height: 12,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
     backgroundColor: COLORS.gray700,
-    borderRadius: 8,
+    marginTop: 2,
   },
   notificationBadge: {
     position: 'absolute',
-    top: 0,
-    right: 0,
+    top: 8,
+    right: 12,
     width: 8,
     height: 8,
     borderRadius: 4,
@@ -244,30 +360,30 @@ const styles = StyleSheet.create({
   },
   alertBanner: {
     flexDirection: 'row',
-    backgroundColor: COLORS.errorLight,
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
-    borderRadius: 12,
-    padding: 16,
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
     marginHorizontal: 24,
-    marginBottom: 24,
+    marginBottom: 16,
+    borderRadius: 16,
+    padding: 16,
+    ...SHADOWS.medium,
   },
   alertIconContainer: {
-    width: 20,
-    height: 20,
-    marginRight: 12,
-    marginTop: 2,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.errorLight,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 16,
   },
   alertTriangle: {
     width: 0,
     height: 0,
-    backgroundColor: 'transparent',
+    borderLeftWidth: 12,
+    borderRightWidth: 12,
+    borderBottomWidth: 24,
     borderStyle: 'solid',
-    borderLeftWidth: 10,
-    borderRightWidth: 10,
-    borderBottomWidth: 18,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
     borderBottomColor: COLORS.error,
@@ -278,13 +394,18 @@ const styles = StyleSheet.create({
   alertTitle: {
     fontSize: SIZES.sm,
     fontWeight: '600',
-    color: '#991B1B',
-    marginBottom: 4,
+    color: COLORS.error,
   },
   alertMessage: {
-    fontSize: SIZES.sm,
-    color: COLORS.gray600,
-    lineHeight: 18,
+    fontSize: SIZES.base,
+    fontWeight: '600',
+    color: COLORS.gray900,
+    marginTop: 4,
+  },
+  alertTimestamp: {
+    fontSize: SIZES.xs,
+    color: COLORS.gray500,
+    marginTop: 4,
   },
   section: {
     paddingHorizontal: 24,
@@ -303,29 +424,36 @@ const styles = StyleSheet.create({
   quickActionPrimary: {
     flex: 1,
     backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    padding: 24,
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
     ...SHADOWS.medium,
   },
   quickActionSecondary: {
     flex: 1,
     backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: COLORS.gray200,
-    borderRadius: 12,
-    padding: 24,
-    ...SHADOWS.small,
+    ...SHADOWS.medium,
+  },
+  quickActionDisabled: {
+    opacity: 0.4,
   },
   qrIconContainer: {
-    width: 32,
-    height: 32,
-    marginBottom: 12,
+    width: 48,
+    height: 48,
     position: 'relative',
+    marginBottom: 12,
   },
   qrSquare1: {
     position: 'absolute',
-    width: 10,
-    height: 10,
+    width: 16,
+    height: 16,
     backgroundColor: COLORS.white,
     borderRadius: 2,
     top: 0,
@@ -333,8 +461,8 @@ const styles = StyleSheet.create({
   },
   qrSquare2: {
     position: 'absolute',
-    width: 10,
-    height: 10,
+    width: 16,
+    height: 16,
     backgroundColor: COLORS.white,
     borderRadius: 2,
     top: 0,
@@ -342,8 +470,8 @@ const styles = StyleSheet.create({
   },
   qrSquare3: {
     position: 'absolute',
-    width: 10,
-    height: 10,
+    width: 16,
+    height: 16,
     backgroundColor: COLORS.white,
     borderRadius: 2,
     bottom: 0,
@@ -351,41 +479,44 @@ const styles = StyleSheet.create({
   },
   qrSquare4: {
     position: 'absolute',
-    width: 10,
-    height: 10,
+    width: 16,
+    height: 16,
     backgroundColor: COLORS.white,
     borderRadius: 2,
     bottom: 0,
     right: 0,
   },
+  quickActionTextPrimary: {
+    color: COLORS.white,
+    fontSize: SIZES.base,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  quickActionTextSecondary: {
+    color: COLORS.gray900,
+    fontSize: SIZES.base,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   reportIconContainer: {
-    width: 32,
-    height: 32,
-    marginBottom: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.errorLight,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 12,
   },
   reportTriangle: {
     width: 0,
     height: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
-    borderLeftWidth: 14,
-    borderRightWidth: 14,
+    borderLeftWidth: 12,
+    borderRightWidth: 12,
     borderBottomWidth: 24,
+    borderStyle: 'solid',
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderBottomColor: COLORS.gray500,
-  },
-  quickActionTextPrimary: {
-    fontSize: SIZES.base,
-    fontWeight: '600',
-    color: COLORS.white,
-  },
-  quickActionTextSecondary: {
-    fontSize: SIZES.base,
-    fontWeight: '600',
-    color: COLORS.gray900,
+    borderBottomColor: COLORS.error,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -394,18 +525,18 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    paddingVertical: 20,
     alignItems: 'center',
     ...SHADOWS.small,
   },
   statNumber: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: SIZES.xxxl,
+    fontWeight: '700',
+    marginBottom: 8,
   },
   statLabel: {
-    fontSize: SIZES.xs,
+    fontSize: SIZES.sm,
     color: COLORS.gray500,
   },
   activityList: {
@@ -414,24 +545,30 @@ const styles = StyleSheet.create({
   activityItem: {
     flexDirection: 'row',
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
+    alignItems: 'center',
     ...SHADOWS.small,
   },
   activityIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: COLORS.successLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 16,
   },
   checkIcon: {
     width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: COLORS.success,
+    height: 12,
+    borderLeftWidth: 4,
+    borderBottomWidth: 4,
+    borderColor: COLORS.success,
+    transform: [{ rotate: '-45deg' }],
+  },
+  activityIconAlert: {
+    borderColor: COLORS.error,
   },
   activityContent: {
     flex: 1,
@@ -440,15 +577,44 @@ const styles = StyleSheet.create({
     fontSize: SIZES.base,
     fontWeight: '600',
     color: COLORS.gray900,
-    marginBottom: 4,
   },
   activitySubtitle: {
     fontSize: SIZES.sm,
-    color: COLORS.gray500,
-    marginBottom: 4,
+    color: COLORS.gray600,
+    marginTop: 2,
   },
   activityTime: {
     fontSize: SIZES.xs,
-    color: COLORS.gray400,
+    color: COLORS.gray500,
+    marginTop: 4,
+  },
+  emptyState: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    ...SHADOWS.small,
+  },
+  emptyTitle: {
+    fontSize: SIZES.base,
+    fontWeight: '600',
+    color: COLORS.gray900,
+    marginBottom: 4,
+  },
+  emptySubtitle: {
+    fontSize: SIZES.sm,
+    color: COLORS.gray500,
+    textAlign: 'center',
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: 24,
+    marginBottom: 12,
+  },
+  loadingText: {
+    color: COLORS.gray600,
+    fontSize: SIZES.sm,
   },
 });

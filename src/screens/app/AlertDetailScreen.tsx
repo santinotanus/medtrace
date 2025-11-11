@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,18 +6,62 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types';
+import { RootStackParamList, AlertRecord } from '../../types';
 import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { supabase } from '../../lib/supabase';
+import { formatDate } from '../../utils/format';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AlertDetail'>;
 
-export default function AlertDetailScreen({ navigation }: Props) {
+export default function AlertDetailScreen({ navigation, route }: Props) {
+  const { alertId } = route.params;
+  const [alert, setAlert] = useState<AlertRecord | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchAlert = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('alert')
+      .select(
+        `
+        *,
+        medicine:medicineId (*),
+        batch:batchId (*)
+      `,
+      )
+      .eq('id', alertId)
+      .maybeSingle();
+
+    if (!error && data) {
+      setAlert(data as AlertRecord);
+    }
+    setLoading(false);
+  }, [alertId]);
+
+  useEffect(() => {
+    fetchAlert();
+  }, [fetchAlert]);
+
+  if (loading || !alert) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator color={COLORS.primary} />
+        <Text style={styles.loadingText}>Cargando alerta...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  const recommendations = Array.isArray(alert.recommendations)
+    ? alert.recommendations
+    : [];
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerButton}
@@ -26,155 +70,128 @@ export default function AlertDetailScreen({ navigation }: Props) {
           <View style={styles.headerIcon} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Detalle de Alerta</Text>
-        <TouchableOpacity style={styles.headerButton}>
-          <View style={styles.headerIcon} />
+        <TouchableOpacity style={styles.headerButton} onPress={fetchAlert}>
+          <View style={styles.refreshIcon} />
         </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Alert Badge */}
         <View style={styles.badgeContainer}>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>ALERTA CRÍTICA</Text>
-          </View>
-        </View>
-
-        {/* Title */}
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>Ibuprofeno 600mg</Text>
-          <Text style={styles.subtitle}>Lote X2847</Text>
-          <Text style={styles.date}>Emitida: 25 de marzo, 2024</Text>
-        </View>
-
-        {/* Alert Description */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Descripción</Text>
-          <View style={styles.card}>
-            <Text style={styles.description}>
-              La ANMAT ha ordenado el retiro preventivo del mercado del lote X2847
-              de Ibuprofeno 600mg debido a la detección de contaminación con
-              sustancias no autorizadas durante los controles de calidad rutinarios.
+            <Text style={styles.badgeText}>
+              {alert.type === 'CRITICAL'
+                ? 'ALERTA CRÍTICA'
+                : alert.type === 'WARNING'
+                ? 'ADVERTENCIA'
+                : 'INFORMACIÓN'}
             </Text>
           </View>
         </View>
 
-        {/* Reason */}
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>{alert.title}</Text>
+          {alert.batch?.batchNumber && (
+            <Text style={styles.subtitle}>Lote {alert.batch.batchNumber}</Text>
+          )}
+          <Text style={styles.date}>
+            Emitida: {formatDate(alert.publishedAt, { includeTime: true })}
+          </Text>
+        </View>
+
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Motivo del Retiro</Text>
+          <Text style={styles.sectionTitle}>Descripción</Text>
           <View style={styles.card}>
-            <View style={styles.reasonItem}>
-              <View style={styles.reasonBullet} />
-              <Text style={styles.reasonText}>
-                Contaminación detectada en análisis de laboratorio
-              </Text>
-            </View>
-            <View style={styles.reasonItem}>
-              <View style={styles.reasonBullet} />
-              <Text style={styles.reasonText}>
-                Riesgo potencial para la salud de los pacientes
-              </Text>
-            </View>
-            <View style={styles.reasonItem}>
-              <View style={styles.reasonBullet} />
-              <Text style={styles.reasonText}>
-                Incumplimiento de normas de calidad farmacéutica
-              </Text>
-            </View>
+            <Text style={styles.description}>{alert.message}</Text>
+            {alert.reason ? (
+              <Text style={styles.description}>Motivo: {alert.reason}</Text>
+            ) : null}
           </View>
         </View>
 
-        {/* Affected Products */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Productos Afectados</Text>
-          <View style={styles.card}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Medicamento:</Text>
-              <Text style={styles.infoValue}>Ibuprofeno 600mg</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Laboratorio:</Text>
-              <Text style={styles.infoValue}>Lab. XYZ S.A.</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Lote:</Text>
-              <Text style={[styles.infoValue, styles.dangerText]}>X2847</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Vencimiento:</Text>
-              <Text style={styles.infoValue}>08/2025</Text>
+        {alert.batch && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Producto Afectado</Text>
+            <View style={styles.card}>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Medicamento:</Text>
+                <Text style={styles.infoValue}>
+                  {alert.medicine?.name ?? '—'}
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Laboratorio:</Text>
+                <Text style={styles.infoValue}>
+                  {alert.medicine?.laboratory ?? '—'}
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Lote:</Text>
+                <Text style={[styles.infoValue, styles.dangerText]}>
+                  {alert.batch.batchNumber}
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Vencimiento:</Text>
+                <Text style={styles.infoValue}>
+                  {formatDate(alert.batch.expirationDate)}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
+        )}
 
-        {/* Recommendations */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recomendaciones</Text>
-          <View style={styles.card}>
-            <View style={styles.recommendationItem}>
-              <View style={styles.numberBadge}>
-                <Text style={styles.numberText}>1</Text>
-              </View>
-              <Text style={styles.recommendationText}>
-                Suspender inmediatamente el consumo del producto
-              </Text>
-            </View>
-            <View style={styles.recommendationItem}>
-              <View style={styles.numberBadge}>
-                <Text style={styles.numberText}>2</Text>
-              </View>
-              <Text style={styles.recommendationText}>
-                Devolver el medicamento a la farmacia de compra
-              </Text>
-            </View>
-            <View style={styles.recommendationItem}>
-              <View style={styles.numberBadge}>
-                <Text style={styles.numberText}>3</Text>
-              </View>
-              <Text style={styles.recommendationText}>
-                Consultar con su médico si ya consumió el producto
-              </Text>
-            </View>
-            <View style={styles.recommendationItem}>
-              <View style={styles.numberBadge}>
-                <Text style={styles.numberText}>4</Text>
-              </View>
-              <Text style={styles.recommendationText}>
-                Reportar cualquier efecto adverso a través de la aplicación
-              </Text>
+        {recommendations.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Recomendaciones</Text>
+            <View style={styles.card}>
+              {recommendations.map((rec, index) => (
+                <View key={rec + index} style={styles.recommendationItem}>
+                  <View style={styles.numberBadge}>
+                    <Text style={styles.numberText}>{index + 1}</Text>
+                  </View>
+                  <Text style={styles.recommendationText}>{rec}</Text>
+                </View>
+              ))}
             </View>
           </View>
-        </View>
+        )}
 
-        {/* Contact Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Información de Contacto</Text>
-          <View style={styles.card}>
-            <Text style={styles.contactTitle}>ANMAT - Línea de Consultas</Text>
-            <Text style={styles.contactInfo}>📞 0800-333-1234</Text>
-            <Text style={styles.contactInfo}>✉️ consultas@anmat.gov.ar</Text>
-            <Text style={styles.contactInfo}>🌐 www.anmat.gov.ar</Text>
+        {alert.contactInfo && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Contacto</Text>
+            <View style={styles.card}>
+              {alert.contactInfo.phone && (
+                <Text style={styles.contactInfo}>📞 {alert.contactInfo.phone}</Text>
+              )}
+              {alert.contactInfo.email && (
+                <Text style={styles.contactInfo}>✉️ {alert.contactInfo.email}</Text>
+              )}
+              {alert.contactInfo.website && (
+                <Text style={styles.contactInfo}>🌐 {alert.contactInfo.website}</Text>
+              )}
+            </View>
           </View>
-        </View>
+        )}
 
-        {/* Actions */}
         <View style={styles.actionsContainer}>
           <Button
             title="Reportar que lo consumí"
             variant="danger"
-            onPress={() => navigation.navigate('Report')}
+            onPress={() => navigation.navigate('Report', {
+              batchId: alert.batch?.id,
+              presetBatchNumber: alert.batch?.batchNumber,
+              presetMedicine: alert.medicine?.name,
+            })}
+            disabled={!alert.batch}
           />
-          <Button
-            title="Descargar Comunicado Oficial"
-            variant="secondary"
-            onPress={() => {}}
-            style={styles.secondaryButton}
-          />
-          <Button
-            title="Compartir Alerta"
-            variant="outline"
-            onPress={() => {}}
-            style={styles.secondaryButton}
-          />
+          {alert.officialDocumentUrl && (
+            <Button
+              title="Ver Comunicado Oficial"
+              variant="secondary"
+              onPress={() => Linking.openURL(alert.officialDocumentUrl as string)}
+              style={styles.secondaryButton}
+            />
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -185,6 +202,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.background,
+  },
+  loadingText: {
+    marginTop: 12,
+    color: COLORS.gray600,
   },
   header: {
     flexDirection: 'row',
@@ -208,6 +235,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.gray700,
     borderRadius: 4,
   },
+  refreshIcon: {
+    width: 20,
+    height: 2,
+    backgroundColor: COLORS.gray700,
+  },
   headerTitle: {
     fontSize: SIZES.lg,
     fontWeight: '600',
@@ -215,44 +247,41 @@ const styles = StyleSheet.create({
   },
   badgeContainer: {
     alignItems: 'center',
-    paddingVertical: 16,
+    marginBottom: 16,
   },
   badge: {
     backgroundColor: COLORS.errorLight,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   badgeText: {
-    fontSize: SIZES.sm,
-    fontWeight: '700',
     color: COLORS.error,
+    fontSize: SIZES.sm,
+    fontWeight: '600',
   },
   titleContainer: {
     paddingHorizontal: 24,
-    alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   title: {
-    fontSize: SIZES.xxxl,
-    fontWeight: 'bold',
+    fontSize: SIZES.xxl,
+    fontWeight: '700',
     color: COLORS.gray900,
-    textAlign: 'center',
-    marginBottom: 8,
   },
   subtitle: {
-    fontSize: SIZES.xl,
-    color: COLORS.error,
-    fontWeight: '600',
-    marginBottom: 8,
+    fontSize: SIZES.base,
+    color: COLORS.gray600,
+    marginTop: 4,
   },
   date: {
     fontSize: SIZES.sm,
     color: COLORS.gray500,
+    marginTop: 4,
   },
   section: {
     paddingHorizontal: 24,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: SIZES.lg,
@@ -262,30 +291,11 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     ...SHADOWS.small,
   },
   description: {
-    fontSize: SIZES.base,
-    color: COLORS.gray700,
-    lineHeight: 24,
-  },
-  reasonItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  reasonBullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.error,
-    marginTop: 8,
-    marginRight: 12,
-  },
-  reasonText: {
-    flex: 1,
     fontSize: SIZES.base,
     color: COLORS.gray700,
     lineHeight: 22,
@@ -293,16 +303,14 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.gray100,
+    marginBottom: 8,
   },
   infoLabel: {
-    fontSize: SIZES.base,
+    fontSize: SIZES.sm,
     color: COLORS.gray500,
   },
   infoValue: {
-    fontSize: SIZES.base,
+    fontSize: SIZES.sm,
     fontWeight: '600',
     color: COLORS.gray900,
   },
@@ -311,8 +319,8 @@ const styles = StyleSheet.create({
   },
   recommendationItem: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 16,
+    alignItems: 'center',
+    marginBottom: 12,
   },
   numberBadge: {
     width: 28,
@@ -324,34 +332,25 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   numberText: {
-    fontSize: SIZES.sm,
-    fontWeight: 'bold',
     color: COLORS.white,
+    fontWeight: '700',
   },
   recommendationText: {
     flex: 1,
     fontSize: SIZES.base,
     color: COLORS.gray700,
-    lineHeight: 22,
-    marginTop: 4,
-  },
-  contactTitle: {
-    fontSize: SIZES.base,
-    fontWeight: '600',
-    color: COLORS.gray900,
-    marginBottom: 12,
   },
   contactInfo: {
     fontSize: SIZES.base,
     color: COLORS.gray700,
     marginBottom: 8,
-    lineHeight: 22,
   },
   actionsContainer: {
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    marginBottom: 32,
+    gap: 12,
   },
   secondaryButton: {
-    marginTop: 12,
+    marginTop: 8,
   },
 });

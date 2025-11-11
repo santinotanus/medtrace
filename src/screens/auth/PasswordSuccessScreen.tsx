@@ -7,7 +7,9 @@ import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PasswordSuccess'>;
 
-export default function PasswordSuccessScreen({ navigation }: Props) {
+export default function PasswordSuccessScreen({ navigation, route }: Props) {
+  const email = route.params?.email;
+
   const handleLogin = () => {
     navigation.navigate('Login');
   };
@@ -35,6 +37,9 @@ export default function PasswordSuccessScreen({ navigation }: Props) {
           <Text style={styles.cardSubtitle}>
             Ahora puedes iniciar sesión con tu nueva contraseña
           </Text>
+          {email ? (
+            <Text style={styles.accountText}>Cuenta: {email}</Text>
+          ) : null}
 
           <View style={styles.tipsBox}>
             <Text style={styles.tipsTitle}>💡 Consejos de seguridad:</Text>
@@ -134,6 +139,12 @@ const styles = StyleSheet.create({
     color: COLORS.gray600,
     textAlign: 'center',
     marginBottom: 24,
+  },
+  accountText: {
+    fontSize: SIZES.sm,
+    color: COLORS.gray500,
+    textAlign: 'center',
+    marginBottom: 16,
   },
   tipsBox: {
     backgroundColor: COLORS.infoLight,

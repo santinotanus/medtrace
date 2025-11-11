@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,52 +8,23 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types';
+import { RootStackParamList, TraceabilityStep } from '../../types';
 import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { formatDate } from '../../utils/format';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanResultSafe'>;
 
-interface TraceStep {
-  title: string;
-  description: string;
-  date: string;
-  completed: boolean;
-}
-
-const traceSteps: TraceStep[] = [
-  {
-    title: 'Fabricación',
-    description: 'Planta Buenos Aires',
-    date: '15/03/2024 10:30',
-    completed: true,
-  },
-  {
-    title: 'Control de Calidad',
-    description: 'Aprobado ANMAT',
-    date: '16/03/2024 14:20',
-    completed: true,
-  },
-  {
-    title: 'Distribución',
-    description: 'Droguería del Sud',
-    date: '18/03/2024 09:15',
-    completed: true,
-  },
-  {
-    title: 'Farmacia',
-    description: 'Farmacity Palermo',
-    date: '20/03/2024 11:45',
-    completed: true,
-  },
-];
-
 export default function ScanResultSafeScreen({ navigation, route }: Props) {
-  const isGuest = route.params?.guest;
+  const { batch } = route.params;
+  const traceSteps = useMemo<TraceabilityStep[]>(
+    () =>
+      (batch.trace_steps ?? []).slice().sort((a, b) => (a.step ?? 0) - (b.step ?? 0)),
+    [batch.trace_steps],
+  );
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerButton}
@@ -62,13 +33,10 @@ export default function ScanResultSafeScreen({ navigation, route }: Props) {
           <View style={styles.headerIcon} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Resultado</Text>
-        <TouchableOpacity style={styles.headerButton}>
-          <View style={styles.headerIcon} />
-        </TouchableOpacity>
+        <View style={styles.headerButton} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Status */}
         <View style={styles.statusContainer}>
           <View style={styles.statusCard}>
             <View style={styles.statusIconContainer}>
@@ -79,62 +47,65 @@ export default function ScanResultSafeScreen({ navigation, route }: Props) {
           </View>
         </View>
 
-        {/* Medicine Info */}
         <View style={styles.section}>
           <View style={styles.infoCard}>
-            <Text style={styles.medicineTitle}>Paracetamol 500mg</Text>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Laboratorio</Text>
-              <Text style={styles.infoValue}>Roemmers S.A.</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Lote</Text>
-              <Text style={styles.infoValue}>A1234567</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Vencimiento</Text>
-              <Text style={styles.infoValue}>12/2026</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Registro ANMAT</Text>
-              <Text style={styles.infoValue}>54.321</Text>
-            </View>
+            <Text style={styles.medicineTitle}>
+              {batch.medicine?.name} {batch.medicine?.dosage}
+            </Text>
+            <InfoRow label="Laboratorio" value={batch.medicine?.laboratory ?? '—'} />
+            <InfoRow label="Lote" value={batch.batchNumber} />
+            <InfoRow label="Vencimiento" value={formatDate(batch.expirationDate)} />
+            <InfoRow
+              label="Registro ANMAT"
+              value={batch.medicine?.anmatRegistry ?? 'No informado'}
+            />
+            <InfoRow label="Estado" value={batch.status} />
           </View>
         </View>
 
-        {/* Traceability */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Trazabilidad</Text>
           <View style={styles.traceCard}>
+            {traceSteps.length === 0 && (
+              <Text style={styles.emptyTrace}>
+                Aún no se registraron pasos de trazabilidad para este lote.
+              </Text>
+            )}
             {traceSteps.map((step, index) => (
-              <View key={index} style={styles.traceStep}>
+              <View key={step.id} style={styles.traceStep}>
                 <View style={styles.traceStepLeft}>
                   <View style={styles.traceStepIcon}>
                     <View style={styles.traceStepIconInner} />
                   </View>
-                  {index < traceSteps.length - 1 && (
-                    <View style={styles.traceStepLine} />
-                  )}
+                  {index < traceSteps.length - 1 && <View style={styles.traceStepLine} />}
                 </View>
                 <View style={styles.traceStepContent}>
                   <Text style={styles.traceStepTitle}>{step.title}</Text>
-                  <Text style={styles.traceStepDescription}>
-                    {step.description}
+                  <Text style={styles.traceStepDescription}>{step.location}</Text>
+                  <Text style={styles.traceStepDate}>
+                    {formatDate(step.timestamp, { includeTime: true })}
                   </Text>
-                  <Text style={styles.traceStepDate}>{step.date}</Text>
                 </View>
               </View>
             ))}
           </View>
         </View>
 
-        {/* Actions */}
         <View style={styles.actionsContainer}>
-          <Button title="Guardar en Historial" onPress={() => {}} />
           <Button
-            title="Ver Prospecto"
+            title="Reportar un problema"
+            onPress={() =>
+              navigation.navigate('Report', {
+                batchId: batch.id,
+                presetBatchNumber: batch.batchNumber,
+                presetMedicine: batch.medicine?.name,
+              })
+            }
+          />
+          <Button
+            title="Ver alertas sanitarias"
             variant="secondary"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('Alerts')}
             style={styles.secondaryButton}
           />
         </View>
@@ -142,6 +113,13 @@ export default function ScanResultSafeScreen({ navigation, route }: Props) {
     </SafeAreaView>
   );
 }
+
+const InfoRow = ({ label, value }: { label: string; value: string }) => (
+  <View style={styles.infoRow}>
+    <Text style={styles.infoLabel}>{label}</Text>
+    <Text style={styles.infoValue}>{value}</Text>
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -255,6 +233,10 @@ const styles = StyleSheet.create({
     padding: 24,
     ...SHADOWS.small,
   },
+  emptyTrace: {
+    color: COLORS.gray500,
+    textAlign: 'center',
+  },
   traceStep: {
     flexDirection: 'row',
     marginBottom: 16,
@@ -267,46 +249,46 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: COLORS.success,
+    borderWidth: 4,
+    borderColor: COLORS.success,
     alignItems: 'center',
     justifyContent: 'center',
   },
   traceStepIconInner: {
-    width: 16,
-    height: 16,
-    backgroundColor: COLORS.white,
-    borderRadius: 8,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: COLORS.success,
   },
   traceStepLine: {
     width: 2,
     flex: 1,
     backgroundColor: COLORS.gray200,
-    marginVertical: 4,
+    marginTop: 4,
   },
   traceStepContent: {
     flex: 1,
-    paddingBottom: 16,
   },
   traceStepTitle: {
     fontSize: SIZES.base,
     fontWeight: '600',
     color: COLORS.gray900,
-    marginBottom: 4,
   },
   traceStepDescription: {
     fontSize: SIZES.sm,
-    color: COLORS.gray500,
-    marginBottom: 4,
+    color: COLORS.gray600,
   },
   traceStepDate: {
     fontSize: SIZES.xs,
-    color: COLORS.gray400,
+    color: COLORS.gray500,
+    marginTop: 4,
   },
   actionsContainer: {
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    marginBottom: 32,
+    gap: 12,
   },
   secondaryButton: {
-    marginTop: 12,
+    marginTop: 8,
   },
 });

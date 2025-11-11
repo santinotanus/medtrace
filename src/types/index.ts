@@ -1,89 +1,169 @@
-export interface Medicine {
-  id: string;
-  name: string;
-  dosage: string;
-  laboratory: string;
-  batch: string;
-  expiration: string;
-  anmatRegistry: string;
-  status: 'safe' | 'alert' | 'warning';
-}
+export type Role = 'USER' | 'GUEST' | 'ADMIN';
+export type MedicineStatus = 'ACTIVE' | 'WITHDRAWN' | 'DISCONTINUED';
+export type BatchStatus = 'SAFE' | 'ALERT' | 'WARNING' | 'WITHDRAWN';
+export type StepStatus = 'COMPLETED' | 'PENDING';
+export type AlertType = 'CRITICAL' | 'WARNING' | 'INFO';
+export type ReportType = 'ADVERSE_EFFECT' | 'QUALITY_ISSUE' | 'COUNTERFEIT';
+export type Severity = 'MILD' | 'MODERATE' | 'SEVERE';
+export type ReportStatus = 'PENDING' | 'REVIEWING' | 'RESOLVED' | 'REJECTED';
+export type ScanResult = 'SAFE' | 'ALERT' | 'WARNING';
 
-export interface Alert {
-  id: string;
-  type: 'critical' | 'warning' | 'info';
-  title: string;
-  message: string;
-  medicine?: string;
-  batch?: string;
-  timestamp: Date;
-}
-
-export interface Report {
-  id: string;
-  medicineId: string;
-  type: 'adverse_effect' | 'quality_issue' | 'counterfeit';
-  description: string;
-  severity: 'mild' | 'moderate' | 'severe';
-  isAnonymous: boolean;
-  timestamp: Date;
-}
-
-export interface User {
+export interface Profile {
   id: string;
   name: string;
   email: string;
-  phone?: string;
-  stats: {
-    verified: number;
-    alerts: number;
-    reports: number;
-  };
+  phone?: string | null;
+  role: Role;
+  isEmailVerified: boolean;
+  lastLoginAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NotificationSettings {
+  id: string;
+  userId: string;
+  allNotifications: boolean;
+  criticalAlerts: boolean;
+  warnings: boolean;
+  infoAlerts: boolean;
+  scanResults: boolean;
+  reportUpdates: boolean;
+  soundEnabled: boolean;
+  vibrationEnabled: boolean;
+  notificationTone?: string | null;
+  emailNotifications: boolean;
+  quietHoursStart?: string | null;
+  quietHoursEnd?: string | null;
+  fcmToken?: string | null;
+  apnsToken?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserSettings {
+  id: string;
+  userId: string;
+  darkMode: boolean;
+  language: string;
+  biometricsEnabled: boolean;
+  autoSync: boolean;
+  dataUsageConsent: boolean;
+  analyticsEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface TraceabilityStep {
   id: string;
+  batchId: string;
+  step: number;
   title: string;
   description: string;
   location: string;
-  timestamp: Date;
-  status: 'completed' | 'pending';
+  timestamp: string;
+  status: StepStatus;
+  verifiedBy?: string | null;
+  createdAt: string;
+}
+
+export interface MedicineRecord {
+  id: string;
+  name: string;
+  dosage: string;
+  laboratory: string;
+  anmatRegistry: string;
+  description?: string | null;
+  activeIngredient?: string | null;
+  status: MedicineStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AlertRecord {
+  id: string;
+  type: AlertType;
+  title: string;
+  message: string;
+  reason?: string | null;
+  recommendations?: string[] | null;
+  medicineId?: string | null;
+  batchId?: string | null;
+  isActive: boolean;
+  publishedAt: string;
+  expiresAt?: string | null;
+  officialDocumentUrl?: string | null;
+  contactInfo?: {
+    phone?: string;
+    email?: string;
+    website?: string;
+  } | null;
+  createdAt: string;
+  updatedAt: string;
+  medicine?: MedicineRecord | null;
+  batch?: BatchRecord | null;
+}
+
+export interface BatchRecord {
+  id: string;
+  medicineId: string;
+  batchNumber: string;
+  qrCode: string;
+  expirationDate: string;
+  manufacturingDate: string;
+  status: BatchStatus;
+  blockchainHash?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  medicine?: MedicineRecord | null;
+  trace_steps?: TraceabilityStep[] | null;
+  alerts?: AlertRecord[] | null;
+  scanResult?: ScanResult;
+}
+
+export interface ScanHistoryEntry {
+  id: string;
+  userId: string;
+  batchId: string;
+  result: ScanResult;
+  deviceInfo?: Record<string, any> | null;
+  scannedAt: string;
+  batch?: BatchRecord | null;
+}
+
+export interface UserStats {
+  verified: number;
+  alerts: number;
+  reports: number;
 }
 
 export type RootStackParamList = {
+  // Auth stack
   Onboarding: undefined;
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
-  VerifyCode: undefined;
-  ResetPassword: undefined;
-  PasswordSuccess: undefined;
+  VerifyCode: { email: string } | undefined;
+  ResetPassword: { accessToken?: string } | undefined;
+  PasswordSuccess: { email: string } | undefined;
 
-  MainTabs: { guest?: boolean } | undefined;
-
-  // Modales / resultados
+  // App stack
+  MainTabs: undefined;
   Scanner: undefined;
-  ScanResultSafe: undefined;
-  ScanResultAlert: undefined;
-
-  // App
-  Report: undefined;
+  ScanResultSafe: { batch: BatchRecord };
+  ScanResultAlert: { batch: BatchRecord };
+  Report: { batchId?: string; presetMedicine?: string; presetBatchNumber?: string } | undefined;
   Alerts: undefined;
-  AlertDetail: undefined;
-
+  AlertDetail: { alertId: string };
   Settings: undefined;
   NotificationsSettings: undefined;
   Privacy: undefined;
   Help: undefined;
   About: undefined;
-
-  // History: undefined;
-
-  Logout: undefined;
 };
 
 export type MainTabParamList = {
-  Home: { guest?: boolean } | undefined;
+  Home: undefined;
   Scan: undefined;
   Profile: undefined;
 };

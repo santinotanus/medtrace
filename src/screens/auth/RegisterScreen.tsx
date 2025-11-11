@@ -13,6 +13,8 @@ import { RootStackParamList } from '../../types';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
@@ -24,18 +26,53 @@ export default function RegisterScreen({ navigation }: Props) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const { enterGuestMode } = useAuth();
 
   const handleRegister = async () => {
+    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
+      setErrorMessage('Completa todos los campos obligatorios.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMessage('Las contraseñas no coinciden.');
+      return;
+    }
+
     setLoading(true);
-    // Simular registro
-    setTimeout(() => {
+    setErrorMessage(null);
+    setInfoMessage(null);
+
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim().toLowerCase(),
+      password,
+      options: {
+        data: {
+          name: name.trim(),
+          phone: phone || undefined,
+        },
+      },
+    });
+
+    if (error) {
+      setErrorMessage(error.message);
       setLoading(false);
-      navigation.replace('MainTabs');
-    }, 1500);
+      return;
+    }
+
+    if (!data.session) {
+      setInfoMessage(
+        'Te enviamos un correo para confirmar tu cuenta. Revisa tu bandeja y vuelve para iniciar sesión.'
+      );
+    }
+
+    setLoading(false);
   };
 
   const handleGuestMode = () => {
-    navigation.replace('MainTabs');
+    enterGuestMode().catch(() => {});
   };
 
   return (
@@ -112,11 +149,21 @@ export default function RegisterScreen({ navigation }: Props) {
             </Text>
           </TouchableOpacity>
 
+          {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+          {infoMessage && <Text style={styles.infoText}>{infoMessage}</Text>}
+
           <Button
             title="Crear cuenta"
             onPress={handleRegister}
             loading={loading}
-            disabled={!acceptTerms}
+            disabled={
+              !acceptTerms ||
+              !name.trim() ||
+              !email.trim() ||
+              !password ||
+              !confirmPassword ||
+              loading
+            }
           />
 
           <View style={styles.divider}>
@@ -197,6 +244,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.gray900,
     marginBottom: 24,
+  },
+  errorText: {
+    color: COLORS.error,
+    marginBottom: 12,
+    fontSize: SIZES.sm,
+  },
+  infoText: {
+    color: COLORS.success,
+    marginBottom: 12,
+    fontSize: SIZES.sm,
   },
   termsContainer: {
     flexDirection: 'row',

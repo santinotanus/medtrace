@@ -1,66 +1,171 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
-  Animated,
+  ActivityIndicator,
+  Linking,
 } from 'react-native';
-
 import type { CompositeScreenProps } from '@react-navigation/native';
-import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import { useNavigation } from '@react-navigation/native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
-import { RootStackParamList, MainTabParamList } from '../../types';
+import { RootStackParamList, MainTabParamList, BatchRecord } from '../../types';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 
 type Props = CompositeScreenProps<
   NativeStackScreenProps<RootStackParamList, 'Scanner'>,
   BottomTabScreenProps<MainTabParamList, 'Scan'>
 >;
 
-export default function ScannerScreen({ navigation, route }: Props) {
-  const scanLineAnim = React.useRef(new Animated.Value(0)).current;
-  const isGuest = route.params?.guest;
-
-  const rootNav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+export default function ScannerScreen({ navigation }: Props) {
+  const { isGuest, exitGuestMode } = useAuth();
+  const [permission, requestPermission] = useCameraPermissions();
+  const [hasPermission, setHasPermission] = useState<'unknown' | 'granted' | 'denied'>('unknown');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const scannedOnceRef = useRef(false);
+  const requestedRef = useRef(false);
 
   useEffect(() => {
-    // Animación de línea de escaneo
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(scanLineAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
-        Animated.timing(scanLineAnim, { toValue: 0, duration: 2000, useNativeDriver: true }),
-      ])
-    );
-    loop.start();
+    if (!permission && !requestedRef.current) {
+      requestedRef.current = true;
+      requestPermission();
+    }
+  }, [permission, requestPermission]);
 
-    // Simular escaneo exitoso después de 3 segundos
-    const timer = setTimeout(() => {
-      const isSafe = Math.random() > 0.3;
-      if (isSafe) {
-        rootNav.navigate('ScanResultSafe', { guest: isGuest });
-      } else {
-        rootNav.navigate('ScanResultAlert', { guest: isGuest });
+  useEffect(() => {
+    if (permission) {
+      setHasPermission(permission.granted ? 'granted' : 'denied');
+    }
+  }, [permission]);
+
+  const handleScan = useCallback(
+    async (qrData: string) => {
+      if (isProcessing || scannedOnceRef.current) return;
+      scannedOnceRef.current = true;
+      setIsProcessing(true);
+      setErrorMessage(null);
+
+      const { data, error } = await supabase.functions.invoke<BatchRecord>('scan-batch', {
+        body: { qrCode: qrData },
+      });
+
+      if (error || !data) {
+        setErrorMessage(
+          error?.message === 'Lote no encontrado'
+            ? 'No encontramos ese lote. Verifica el código o vuelve a intentarlo.'
+            : error?.message ?? 'Ocurrió un error al validar el QR.',
+        );
+        setIsProcessing(false);
+        scannedOnceRef.current = false;
+        return;
       }
-    }, 3000);
 
-    return () => {
-      loop.stop();
-      clearTimeout(timer);
-    };
-  }, [rootNav, scanLineAnim, isGuest]);
+      const targetScreen = data.scanResult === 'SAFE' ? 'ScanResultSafe' : 'ScanResultAlert';
+      navigation.replace(targetScreen, { batch: data });
+      setIsProcessing(false);
+      scannedOnceRef.current = false;
+    },
+    [isProcessing, navigation],
+  );
 
-  const translateY = scanLineAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 300],
-  });
+  const renderContent = () => {
+    if (isGuest) {
+      return (
+        <View style={styles.centerContent}>
+          <Text style={styles.guestTitle}>Inicia sesión para escanear</Text>
+          <Text style={styles.guestSubtitle}>
+            Necesitamos identificarte para validar los escaneos contra la blockchain.
+          </Text>
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={() => exitGuestMode()}
+          >
+            <Text style={styles.loginButtonText}>Ir al inicio de sesión</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (hasPermission === 'unknown') {
+      return (
+        <View style={styles.centerContent}>
+          <ActivityIndicator color={COLORS.primary} />
+          <Text style={styles.permissionText}>Solicitando permiso de cámara...</Text>
+        </View>
+      );
+    }
+
+    if (hasPermission === 'denied') {
+      return (
+        <View style={styles.centerContent}>
+          <Text style={styles.permissionTitle}>Permiso de cámara requerido</Text>
+          <Text style={styles.permissionText}>
+            Habilita el acceso a la cámara para poder escanear códigos QR.
+          </Text>
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={() => Linking.openSettings()}
+          >
+            <Text style={styles.loginButtonText}>Abrir configuración</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.cameraWrapper}>
+        <CameraView
+          barcodeScannerSettings={{
+            barcodeTypes: ['qr', 'pdf417', 'datamatrix'],
+          }}
+          onBarcodeScanned={({ data }) => handleScan(data)}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <View style={styles.overlay}>
+          <View style={styles.frame} />
+        </View>
+        <View style={styles.instructionsContainer}>
+          <View style={styles.instructionsCard}>
+            {isProcessing ? (
+              <>
+                <ActivityIndicator color={COLORS.primary} />
+                <Text style={styles.instructionsTitle}>Validando en Supabase...</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.instructionsTitle}>Alinea el código QR</Text>
+                <Text style={styles.instructionsText}>
+                  Coloca el código dentro del marco para escanearlo
+                </Text>
+              </>
+            )}
+            {errorMessage && (
+              <View style={styles.errorBanner}>
+                <Text style={styles.errorTitle}>No pudimos validar el QR</Text>
+                <Text style={styles.errorText}>{errorMessage}</Text>
+                <TouchableOpacity
+                  onPress={() => setErrorMessage(null)}
+                  style={styles.errorRetry}
+                >
+                  <Text style={styles.errorRetryText}>Intentar nuevamente</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerButton}
@@ -71,50 +176,9 @@ export default function ScannerScreen({ navigation, route }: Props) {
           </View>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Escanear Medicamento</Text>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => rootNav.navigate('Help')}
-        >
-          <View style={styles.infoIcon}>
-            <Text style={styles.infoText}>i</Text>
-          </View>
-        </TouchableOpacity>
+        <View style={styles.headerButton} />
       </View>
-
-      {/* Camera View */}
-      <View style={styles.cameraContainer}>
-        <View style={styles.cameraPlaceholder}>
-          <View style={styles.cameraIconContainer}>
-            <View style={styles.cameraIcon} />
-            <Text style={styles.cameraText}>Vista de cámara</Text>
-            <Text style={styles.scanningText}>Escaneando...</Text>
-          </View>
-        </View>
-
-        {/* Scan Frame */}
-        <View style={styles.scanFrame}>
-          <View style={styles.frameContainer}>
-            {/* Corners */}
-            <View style={[styles.corner, styles.cornerTopLeft]} />
-            <View style={[styles.corner, styles.cornerTopRight]} />
-            <View style={[styles.corner, styles.cornerBottomLeft]} />
-            <View style={[styles.corner, styles.cornerBottomRight]} />
-
-            {/* Scanning line */}
-            <Animated.View style={[styles.scanLine, { transform: [{ translateY }] }]} />
-          </View>
-        </View>
-
-        {/* Instructions */}
-        <View style={styles.instructionsContainer}>
-          <View style={styles.instructionsCard}>
-            <Text style={styles.instructionsTitle}>Alinea el código QR</Text>
-            <Text style={styles.instructionsText}>
-              Coloca el código dentro del marco para escanearlo
-            </Text>
-          </View>
-        </View>
-      </View>
+      {renderContent()}
     </SafeAreaView>
   );
 }
@@ -154,141 +218,132 @@ const styles = StyleSheet.create({
     borderColor: COLORS.gray700,
     transform: [{ rotate: '45deg' }],
   },
-  infoIcon: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: COLORS.gray700,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  infoText: {
-    color: COLORS.white,
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
   headerTitle: {
     fontSize: SIZES.lg,
     fontWeight: '600',
     color: COLORS.primary,
   },
-  cameraContainer: {
+  cameraWrapper: {
     flex: 1,
-    backgroundColor: COLORS.gray800,
     position: 'relative',
+    overflow: 'hidden',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    marginHorizontal: 16,
+    backgroundColor: COLORS.black,
   },
-  cameraPlaceholder: {
-    flex: 1,
-    backgroundColor: COLORS.gray700,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cameraIconContainer: {
-    alignItems: 'center',
-  },
-  cameraIcon: {
-    width: 64,
-    height: 64,
-    backgroundColor: COLORS.gray400,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  cameraText: {
-    fontSize: SIZES.base,
-    color: COLORS.gray400,
-    marginBottom: 8,
-  },
-  scanningText: {
-    fontSize: SIZES.sm,
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  scanFrame: {
+  overlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 48,
+    alignItems: 'center',
   },
-  frameContainer: {
-    width: '100%',
+  frame: {
+    width: '70%',
     aspectRatio: 1,
-    maxWidth: 300,
-    position: 'relative',
-  },
-  corner: {
-    position: 'absolute',
-    width: 48,
-    height: 48,
-    borderColor: COLORS.primary,
     borderWidth: 4,
-  },
-  cornerTopLeft: {
-    top: 0,
-    left: 0,
-    borderRightWidth: 0,
-    borderBottomWidth: 0,
-    borderTopLeftRadius: 16,
-  },
-  cornerTopRight: {
-    top: 0,
-    right: 0,
-    borderLeftWidth: 0,
-    borderBottomWidth: 0,
-    borderTopRightRadius: 16,
-  },
-  cornerBottomLeft: {
-    bottom: 0,
-    left: 0,
-    borderRightWidth: 0,
-    borderTopWidth: 0,
-    borderBottomLeftRadius: 16,
-  },
-  cornerBottomRight: {
-    bottom: 0,
-    right: 0,
-    borderLeftWidth: 0,
-    borderTopWidth: 0,
-    borderBottomRightRadius: 16,
-  },
-  scanLine: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 4,
-    backgroundColor: COLORS.primary,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
-    elevation: 5,
+    borderColor: COLORS.primary,
+    borderRadius: 24,
   },
   instructionsContainer: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 24,
+    bottom: 32,
+    width: '100%',
+    alignItems: 'center',
   },
   instructionsCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.6)',
     padding: 16,
+    borderRadius: 16,
+    width: '80%',
     alignItems: 'center',
-    ...SHADOWS.large,
   },
   instructionsTitle: {
+    color: COLORS.white,
     fontSize: SIZES.base,
     fontWeight: '600',
-    color: COLORS.gray900,
     marginBottom: 4,
   },
   instructionsText: {
+    color: COLORS.gray300,
+    textAlign: 'center',
     fontSize: SIZES.sm,
+  },
+  errorBanner: {
+    width: '100%',
+    marginTop: 12,
+    backgroundColor: 'rgba(239,68,68,0.1)',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.error,
+  },
+  errorTitle: {
+    color: COLORS.error,
+    fontWeight: '700',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  centerContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  guestTitle: {
+    fontSize: SIZES.xxl,
+    fontWeight: '700',
+    color: COLORS.primary,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  guestSubtitle: {
+    fontSize: SIZES.base,
     color: COLORS.gray600,
     textAlign: 'center',
+    marginBottom: 16,
+  },
+  loginButton: {
+    marginTop: 12,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  loginButtonText: {
+    color: COLORS.white,
+    fontWeight: '600',
+  },
+  permissionTitle: {
+    fontSize: SIZES.lg,
+    fontWeight: '600',
+    color: COLORS.gray900,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  permissionText: {
+    fontSize: SIZES.base,
+    color: COLORS.gray600,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  errorText: {
+    color: COLORS.error,
+    fontSize: SIZES.sm,
+    textAlign: 'center',
+  },
+  errorRetry: {
+    marginTop: 8,
+    alignSelf: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  errorRetryText: {
+    color: COLORS.white,
+    fontSize: SIZES.xs,
+    fontWeight: '600',
   },
 });

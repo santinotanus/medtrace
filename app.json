@@ -25,6 +25,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Necesitamos acceder a tu cámara para escanear códigos QR de tus medicamentos.",
+          "microphonePermission": "Necesitamos el micrófono solo si grabas video desde la cámara."
+        }
+      ]
+    ]
   }
 }

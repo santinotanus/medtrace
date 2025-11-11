@@ -14,6 +14,8 @@ import { RootStackParamList } from '../../types';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -21,17 +23,37 @@ export default function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { enterGuestMode } = useAuth();
 
   const handleLogin = async () => {
-    setLoading(true);
-    setTimeout(() => {
+    if (!email.trim() || !password) {
+      setErrorMessage('Ingresá tu email y contraseña.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setErrorMessage(null);
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+
+      if (error) {
+        setErrorMessage(
+          error.message.includes('Invalid login credentials')
+            ? 'Credenciales inválidas. Revisa tus datos.'
+            : error.message
+        );
+      }
+    } finally {
       setLoading(false);
-      navigation.replace('MainTabs');
-    }, 1500);
+    }
   };
 
   const handleGuestMode = () => {
-    navigation.replace('MainTabs', { guest: true });
+    enterGuestMode().catch(() => {});
   };
 
   return (
@@ -90,10 +112,13 @@ export default function LoginScreen({ navigation }: Props) {
               </Text>
             </TouchableOpacity>
 
+            {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+
             <Button
               title="Iniciar Sesión"
               onPress={handleLogin}
               loading={loading}
+              disabled={!email.trim() || !password || loading}
             />
 
             {/* Divider */}
@@ -216,6 +241,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.gray900,
     marginBottom: 24,
+  },
+  errorText: {
+    color: COLORS.error,
+    marginBottom: 12,
+    fontSize: SIZES.sm,
   },
   forgotPassword: {
     alignSelf: 'flex-end',

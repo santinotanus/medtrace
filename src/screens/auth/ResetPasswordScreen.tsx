@@ -10,9 +10,11 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
-//import Input from '../../components/Input';
+import Input from '../../components/Input';
 import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ResetPassword'>;
 
@@ -20,6 +22,8 @@ export default function ResetPasswordScreen({ navigation }: Props) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { finishPasswordRecovery } = useAuth();
 
   const requirements = [
     { text: 'Al menos 8 caracteres', met: password.length >= 8 },
@@ -29,11 +33,27 @@ export default function ResetPasswordScreen({ navigation }: Props) {
   ];
 
   const handleReset = async () => {
-    setLoading(true);
-    setTimeout(() => {
+    if (password !== confirmPassword) {
+      setErrorMessage('Las contraseñas deben coincidir.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setErrorMessage(null);
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        setErrorMessage(error.message);
+        return;
+      }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      await finishPasswordRecovery();
+      navigation.navigate('PasswordSuccess', { email: user?.email ?? '' });
+    } finally {
       setLoading(false);
-      navigation.navigate('PasswordSuccess');
-    }, 1500);
+    }
   };
 
   return (
@@ -101,12 +121,16 @@ export default function ResetPasswordScreen({ navigation }: Props) {
             ))}
           </View>
 
+          {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+
           <Button
             title="Restablecer Contraseña"
             onPress={handleReset}
             loading={loading}
             disabled={
-              !requirements.every((r) => r.met) || password !== confirmPassword
+              !requirements.every((r) => r.met) ||
+              password !== confirmPassword ||
+              loading
             }
           />
         </View>
@@ -169,6 +193,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 24,
     ...SHADOWS.large,
+  },
+  errorText: {
+    color: COLORS.error,
+    marginBottom: 24,
+    fontSize: SIZES.sm,
   },
   requirementsBox: {
     backgroundColor: COLORS.gray50,

@@ -13,20 +13,41 @@ import { RootStackParamList } from '../../types';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
 
 export default function ForgotPasswordScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { beginPasswordRecovery } = useAuth();
 
   const handleSendCode = async () => {
-    setLoading(true);
-    // Simular envío de código
-    setTimeout(() => {
+    if (!email.trim()) {
+      setErrorMessage('Ingresá el correo asociado a tu cuenta.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setErrorMessage(null);
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim().toLowerCase(),
+        options: { shouldCreateUser: false },
+      });
+
+      if (error) {
+        setErrorMessage(error.message);
+        return;
+      }
+
+      beginPasswordRecovery();
+      navigation.navigate('VerifyCode', { email: email.trim().toLowerCase() });
+    } finally {
       setLoading(false);
-      navigation.navigate('VerifyCode', { email });
-    }, 1500);
+    }
   };
 
   return (
@@ -65,10 +86,13 @@ export default function ForgotPasswordScreen({ navigation }: Props) {
             autoCapitalize="none"
           />
 
+          {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+
           <Button
             title="Enviar Instrucciones"
             onPress={handleSendCode}
             loading={loading}
+            disabled={!email.trim() || loading}
           />
         </View>
 
@@ -150,6 +174,11 @@ const styles = StyleSheet.create({
     padding: 24,
     marginBottom: 24,
     ...SHADOWS.large,
+  },
+  errorText: {
+    color: COLORS.error,
+    marginBottom: 12,
+    fontSize: SIZES.sm,
   },
   infoBox: {
     flexDirection: 'row',

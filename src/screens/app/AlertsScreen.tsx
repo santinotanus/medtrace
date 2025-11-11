@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,91 +6,102 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types';
+import { RootStackParamList, AlertRecord } from '../../types';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
+import { formatRelativeTime } from '../../utils/format';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Alerts'>;
 
-interface AlertItem {
-  id: string;
-  type: 'critical' | 'warning' | 'info';
-  title: string;
-  message: string;
-  time: string;
-}
-
-const alerts: AlertItem[] = [
-  {
-    id: '1',
-    type: 'critical',
-    title: 'Ibuprofeno 600mg - Lote X2847',
-    message: 'Retirado del mercado por contaminación. NO consumir.',
-    time: 'Hace 2 horas',
-  },
-  {
-    id: '2',
-    type: 'warning',
-    title: 'Amoxicilina 500mg - Varios lotes',
-    message: 'Posible escasez en el mercado. Consulte alternativas con su médico.',
-    time: 'Hace 1 día',
-  },
-  {
-    id: '3',
-    type: 'info',
-    title: 'Actualización de sistema',
-    message: 'Nueva versión disponible con mejoras en el escáner QR.',
-    time: 'Hace 3 días',
-  },
-];
-
 export default function AlertsScreen({ navigation }: Props) {
   const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
+  const [alerts, setAlerts] = useState<AlertRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const { isGuest } = useAuth();
 
-  const getAlertStyle = (type: AlertItem['type']) => {
+  const fetchAlerts = useCallback(async () => {
+    if (isGuest) {
+      setAlerts([]);
+      return;
+    }
+
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('alert')
+      .select(
+        `
+        *,
+        medicine:medicineId (*),
+        batch:batchId (*)
+      `,
+      )
+      .order('publishedAt', { ascending: false });
+
+    if (!error && data) {
+      setAlerts(data as AlertRecord[]);
+    }
+    setLoading(false);
+  }, [isGuest]);
+
+  useEffect(() => {
+    fetchAlerts();
+  }, [fetchAlerts]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchAlerts();
+    setRefreshing(false);
+  }, [fetchAlerts]);
+
+  const filteredAlerts = useMemo(
+    () => alerts.filter((alert) => (activeTab === 'active' ? alert.isActive : !alert.isActive)),
+    [alerts, activeTab],
+  );
+
+  const getAlertStyle = (type: AlertRecord['type']) => {
     switch (type) {
-      case 'critical':
+      case 'CRITICAL':
         return {
           borderColor: COLORS.error,
           iconBg: COLORS.errorLight,
           iconColor: COLORS.error,
           badgeBg: '#FEE2E2',
           badgeColor: '#991B1B',
+          badgeLabel: 'CRÍTICA',
         };
-      case 'warning':
+      case 'WARNING':
         return {
           borderColor: COLORS.warning,
           iconBg: COLORS.warningLight,
           iconColor: COLORS.warning,
           badgeBg: '#FEF3C7',
           badgeColor: '#78350F',
+          badgeLabel: 'ADVERTENCIA',
         };
-      case 'info':
+      default:
         return {
           borderColor: COLORS.primary,
           iconBg: COLORS.primaryLight,
           iconColor: COLORS.primary,
           badgeBg: COLORS.primaryLight,
           badgeColor: COLORS.primary,
+          badgeLabel: 'INFO',
         };
     }
   };
 
-  const getBadgeText = (type: AlertItem['type']) => {
-    switch (type) {
-      case 'critical':
-        return 'CRÍTICA';
-      case 'warning':
-        return 'ADVERTENCIA';
-      case 'info':
-        return 'INFORMACIÓN';
-    }
-  };
+  const disabledMessage = isGuest
+    ? 'Inicia sesión para ver las alertas sanitarias más recientes.'
+    : null;
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header con botón volver */}
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <TouchableOpacity
@@ -108,12 +119,12 @@ export default function AlertsScreen({ navigation }: Props) {
         </View>
       </View>
 
-      {/* Tabs */}
       <View style={styles.tabsContainer}>
         <View style={styles.tabs}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'active' && styles.tabActive]}
+            style={[styles.tab, activeTab === 'active' && styles.tabActive, isGuest && styles.tabDisabled]}
             onPress={() => setActiveTab('active')}
+            disabled={isGuest}
           >
             <Text
               style={[
@@ -121,12 +132,13 @@ export default function AlertsScreen({ navigation }: Props) {
                 activeTab === 'active' && styles.tabTextActive,
               ]}
             >
-              Activas (3)
+              Activas ({alerts.filter((a) => a.isActive).length})
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'history' && styles.tabActive]}
+            style={[styles.tab, activeTab === 'history' && styles.tabActive, isGuest && styles.tabDisabled]}
             onPress={() => setActiveTab('history')}
+            disabled={isGuest}
           >
             <Text
               style={[
@@ -134,61 +146,94 @@ export default function AlertsScreen({ navigation }: Props) {
                 activeTab === 'history' && styles.tabTextActive,
               ]}
             >
-              Historial
+              Historial ({alerts.filter((a) => !a.isActive).length})
             </Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Lista de alertas */}
-      <ScrollView style={styles.alertsList} showsVerticalScrollIndicator={false}>
-        {alerts.map((alert) => {
-          const style = getAlertStyle(alert.type);
-          return (
-            <TouchableOpacity
-              key={alert.id}
-              style={[styles.alertCard, { borderLeftColor: style.borderColor }]}
-              onPress={() => navigation.navigate('AlertDetail' as any)}
-            >
-              <View style={styles.alertHeader}>
-                <View
-                  style={[
-                    styles.alertIconContainer,
-                    { backgroundColor: style.iconBg },
-                  ]}
-                >
+      {disabledMessage ? (
+        <View style={styles.disabledCard}>
+          <Text style={styles.disabledText}>{disabledMessage}</Text>
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.alertsList}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+          }
+        >
+          {loading && !refreshing ? (
+            <View style={styles.loader}>
+              <ActivityIndicator color={COLORS.primary} />
+              <Text style={styles.loaderText}>Cargando alertas...</Text>
+            </View>
+          ) : null}
+
+          {!loading && filteredAlerts.length === 0 && (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>
+                {activeTab === 'active' ? 'Sin alertas activas' : 'Historial vacío'}
+              </Text>
+              <Text style={styles.emptySubtitle}>
+                {activeTab === 'active'
+                  ? 'Te avisaremos apenas se publique una nueva alerta.'
+                  : 'Aún no tienes alertas anteriores registradas.'}
+              </Text>
+            </View>
+          )}
+
+          {filteredAlerts.map((alert) => {
+            const style = getAlertStyle(alert.type);
+            return (
+              <TouchableOpacity
+                key={alert.id}
+                style={[styles.alertCard, { borderLeftColor: style.borderColor }]}
+                onPress={() => navigation.navigate('AlertDetail', { alertId: alert.id })}
+              >
+                <View style={styles.alertHeader}>
                   <View
                     style={[
-                      styles.alertIcon,
-                      { backgroundColor: style.iconColor },
+                      styles.alertIconContainer,
+                      { backgroundColor: style.iconBg },
                     ]}
-                  />
-                </View>
-                <View style={styles.alertContent}>
-                  <View style={styles.alertMeta}>
+                  >
                     <View
-                      style={[styles.badge, { backgroundColor: style.badgeBg }]}
-                    >
-                      <Text
-                        style={[styles.badgeText, { color: style.badgeColor }]}
+                      style={[
+                        styles.alertIcon,
+                        { backgroundColor: style.iconColor },
+                      ]}
+                    />
+                  </View>
+                  <View style={styles.alertContent}>
+                    <View style={styles.alertMeta}>
+                      <View
+                        style={[styles.badge, { backgroundColor: style.badgeBg }]}
                       >
-                        {getBadgeText(alert.type)}
+                        <Text
+                          style={[styles.badgeText, { color: style.badgeColor }]}
+                        >
+                          {style.badgeLabel}
+                        </Text>
+                      </View>
+                      <Text style={styles.alertTime}>
+                        {formatRelativeTime(alert.publishedAt)}
                       </Text>
                     </View>
-                    <Text style={styles.alertTime}>{alert.time}</Text>
-                  </View>
-                  <Text style={styles.alertTitle}>{alert.title}</Text>
-                  <Text style={styles.alertMessage}>{alert.message}</Text>
-                  <View style={styles.linkContainer}>
-                    <Text style={styles.alertLink}>Ver detalles</Text>
-                    <View style={styles.arrow} />
+                    <Text style={styles.alertTitle}>{alert.title}</Text>
+                    <Text style={styles.alertMessage}>{alert.message}</Text>
+                    <View style={styles.linkContainer}>
+                      <Text style={styles.alertLink}>Ver detalles</Text>
+                      <View style={styles.arrow} />
+                    </View>
                   </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -200,59 +245,67 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingVertical: 16,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 16,
   },
   backButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.small,
   },
   backIcon: {
-    width: 14,
-    height: 14,
-    borderLeftWidth: 2,
-    borderBottomWidth: 2,
-    borderColor: COLORS.gray900,
+    width: 12,
+    height: 12,
+    borderLeftWidth: 3,
+    borderBottomWidth: 3,
+    borderColor: COLORS.gray700,
     transform: [{ rotate: '45deg' }],
   },
   title: {
-    fontSize: SIZES.xl,
-    fontWeight: 'bold',
-    color: COLORS.primary,
-    marginBottom: 2,
+    fontSize: SIZES.xxl,
+    fontWeight: '700',
+    color: COLORS.gray900,
   },
   subtitle: {
     fontSize: SIZES.sm,
-    color: COLORS.gray600,
+    color: COLORS.gray500,
+    marginTop: 4,
   },
   tabsContainer: {
     paddingHorizontal: 24,
-    marginVertical: 24,
+    marginBottom: 12,
   },
   tabs: {
     flexDirection: 'row',
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 4,
     ...SHADOWS.small,
   },
   tab: {
     flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
     alignItems: 'center',
   },
   tabActive: {
     backgroundColor: COLORS.primary,
   },
+  tabDisabled: {
+    opacity: 0.5,
+  },
   tabText: {
     fontSize: SIZES.sm,
     fontWeight: '600',
-    color: COLORS.gray500,
+    color: COLORS.gray600,
   },
   tabTextActive: {
     color: COLORS.white,
@@ -263,45 +316,45 @@ const styles = StyleSheet.create({
   },
   alertCard: {
     backgroundColor: COLORS.white,
-    borderLeftWidth: 4,
-    borderRadius: 12,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 16,
-    ...SHADOWS.small,
+    borderLeftWidth: 4,
+    ...SHADOWS.medium,
   },
   alertHeader: {
     flexDirection: 'row',
+    gap: 16,
   },
   alertIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
   alertIcon: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
   },
   alertContent: {
     flex: 1,
   },
   alertMeta: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-    gap: 8,
+    marginBottom: 4,
   },
   badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
   },
   badgeText: {
     fontSize: SIZES.xs,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   alertTime: {
     fontSize: SIZES.xs,
@@ -309,20 +362,19 @@ const styles = StyleSheet.create({
   },
   alertTitle: {
     fontSize: SIZES.base,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: COLORS.gray900,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   alertMessage: {
     fontSize: SIZES.sm,
     color: COLORS.gray600,
-    lineHeight: 20,
-    marginBottom: 12,
   },
   linkContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    marginTop: 12,
+    gap: 6,
   },
   alertLink: {
     fontSize: SIZES.sm,
@@ -336,5 +388,46 @@ const styles = StyleSheet.create({
     borderRightWidth: 2,
     borderColor: COLORS.primary,
     transform: [{ rotate: '45deg' }],
+  },
+  loader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  loaderText: {
+    color: COLORS.gray500,
+    fontSize: SIZES.sm,
+  },
+  emptyState: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    ...SHADOWS.small,
+  },
+  emptyTitle: {
+    fontSize: SIZES.base,
+    fontWeight: '600',
+    color: COLORS.gray900,
+    marginBottom: 4,
+  },
+  emptySubtitle: {
+    fontSize: SIZES.sm,
+    color: COLORS.gray500,
+    textAlign: 'center',
+  },
+  disabledCard: {
+    marginHorizontal: 24,
+    marginTop: 24,
+    backgroundColor: COLORS.white,
+    padding: 20,
+    borderRadius: 16,
+    ...SHADOWS.small,
+  },
+  disabledText: {
+    color: COLORS.gray600,
+    fontSize: SIZES.base,
+    textAlign: 'center',
   },
 });

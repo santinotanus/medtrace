@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,25 +9,30 @@ import {
   Switch,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types';
+import { RootStackParamList, NotificationSettings } from '../../types';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { useAuth } from '../../hooks/useAuth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NotificationsSettings'>;
 
 export default function NotificationsSettingsScreen({ navigation }: Props) {
-  const [allNotifications, setAllNotifications] = useState(true);
-  const [criticalAlerts, setCriticalAlerts] = useState(true);
-  const [warnings, setWarnings] = useState(true);
-  const [infoAlerts, setInfoAlerts] = useState(false);
-  const [scanResults, setScanResults] = useState(true);
-  const [reports, setReports] = useState(true);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [vibrationEnabled, setVibrationEnabled] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(false);
+  const { notificationSettings, updateNotificationSettings, isGuest } = useAuth();
+  const [localSettings, setLocalSettings] = useState<NotificationSettings | null>(notificationSettings);
+
+  useEffect(() => {
+    setLocalSettings(notificationSettings);
+  }, [notificationSettings]);
+
+  const handleToggle = async (key: keyof NotificationSettings, value: boolean) => {
+    if (!localSettings) return;
+    setLocalSettings({ ...localSettings, [key]: value });
+    await updateNotificationSettings({ [key]: value });
+  };
+
+  const masterEnabled = localSettings?.allNotifications ?? true;
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -40,7 +45,6 @@ export default function NotificationsSettingsScreen({ navigation }: Props) {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Master Toggle */}
         <View style={styles.masterSection}>
           <View style={styles.masterCard}>
             <View style={styles.masterIcon}>
@@ -53,243 +57,141 @@ export default function NotificationsSettingsScreen({ navigation }: Props) {
               </Text>
             </View>
             <Switch
-              value={allNotifications}
-              onValueChange={setAllNotifications}
+              value={localSettings?.allNotifications ?? true}
+              onValueChange={(value) => handleToggle('allNotifications', value)}
+              disabled={isGuest}
               trackColor={{ false: COLORS.gray300, true: COLORS.primary }}
               thumbColor={COLORS.white}
             />
           </View>
         </View>
 
-        {/* Alert Types */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>TIPOS DE ALERTAS</Text>
 
-          <View style={styles.notificationItem}>
-            <View style={styles.notificationLeft}>
-              <View style={[styles.notificationIcon, { backgroundColor: COLORS.errorLight }]}>
-                <View style={styles.notificationIconInner} />
-              </View>
-              <View style={styles.notificationContent}>
-                <Text style={styles.notificationTitle}>Alertas Críticas</Text>
-                <Text style={styles.notificationSubtitle}>
-                  Medicamentos retirados o contaminados
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={criticalAlerts}
-              onValueChange={setCriticalAlerts}
-              disabled={!allNotifications}
-              trackColor={{ false: COLORS.gray300, true: COLORS.error }}
-              thumbColor={COLORS.white}
-            />
-          </View>
+          <NotificationToggle
+            title="Alertas Críticas"
+            subtitle="Medicamentos retirados o contaminados"
+            color={COLORS.error}
+            bg={COLORS.errorLight}
+            value={localSettings?.criticalAlerts ?? true}
+            onChange={(value) => handleToggle('criticalAlerts', value)}
+            disabled={!masterEnabled || isGuest}
+          />
 
-          <View style={styles.notificationItem}>
-            <View style={styles.notificationLeft}>
-              <View style={[styles.notificationIcon, { backgroundColor: COLORS.warningLight }]}>
-                <View style={styles.notificationIconInner} />
-              </View>
-              <View style={styles.notificationContent}>
-                <Text style={styles.notificationTitle}>Advertencias</Text>
-                <Text style={styles.notificationSubtitle}>
-                  Escasez o problemas no críticos
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={warnings}
-              onValueChange={setWarnings}
-              disabled={!allNotifications}
-              trackColor={{ false: COLORS.gray300, true: COLORS.warning }}
-              thumbColor={COLORS.white}
-            />
-          </View>
+          <NotificationToggle
+            title="Advertencias"
+            subtitle="Escasez o problemas no críticos"
+            color={COLORS.warning}
+            bg={COLORS.warningLight}
+            value={localSettings?.warnings ?? true}
+            onChange={(value) => handleToggle('warnings', value)}
+            disabled={!masterEnabled || isGuest}
+          />
 
-          <View style={styles.notificationItem}>
-            <View style={styles.notificationLeft}>
-              <View style={[styles.notificationIcon, { backgroundColor: COLORS.infoLight }]}>
-                <View style={styles.notificationIconInner} />
-              </View>
-              <View style={styles.notificationContent}>
-                <Text style={styles.notificationTitle}>Información General</Text>
-                <Text style={styles.notificationSubtitle}>
-                  Actualizaciones y novedades
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={infoAlerts}
-              onValueChange={setInfoAlerts}
-              disabled={!allNotifications}
-              trackColor={{ false: COLORS.gray300, true: COLORS.info }}
-              thumbColor={COLORS.white}
-            />
-          </View>
+          <NotificationToggle
+            title="Información General"
+            subtitle="Actualizaciones y novedades"
+            color={COLORS.info}
+            bg={COLORS.infoLight}
+            value={localSettings?.infoAlerts ?? false}
+            onChange={(value) => handleToggle('infoAlerts', value)}
+            disabled={!masterEnabled || isGuest}
+          />
         </View>
 
-        {/* Activity Notifications */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ACTIVIDAD</Text>
 
-          <View style={styles.notificationItem}>
-            <View style={styles.notificationLeft}>
-              <View style={[styles.notificationIcon, { backgroundColor: COLORS.successLight }]}>
-                <View style={styles.notificationIconInner} />
-              </View>
-              <View style={styles.notificationContent}>
-                <Text style={styles.notificationTitle}>Resultados de Escaneo</Text>
-                <Text style={styles.notificationSubtitle}>
-                  Confirmación de verificaciones
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={scanResults}
-              onValueChange={setScanResults}
-              disabled={!allNotifications}
-              trackColor={{ false: COLORS.gray300, true: COLORS.success }}
-              thumbColor={COLORS.white}
-            />
-          </View>
+          <NotificationToggle
+            title="Resultados de Escaneo"
+            subtitle="Confirmación de verificaciones"
+            color={COLORS.success}
+            bg={COLORS.successLight}
+            value={localSettings?.scanResults ?? true}
+            onChange={(value) => handleToggle('scanResults', value)}
+            disabled={!masterEnabled || isGuest}
+          />
 
-          <View style={styles.notificationItem}>
-            <View style={styles.notificationLeft}>
-              <View style={[styles.notificationIcon, { backgroundColor: COLORS.primaryLight }]}>
-                <View style={styles.notificationIconInner} />
-              </View>
-              <View style={styles.notificationContent}>
-                <Text style={styles.notificationTitle}>Estado de Reportes</Text>
-                <Text style={styles.notificationSubtitle}>
-                  Actualizaciones de tus reportes
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={reports}
-              onValueChange={setReports}
-              disabled={!allNotifications}
-              trackColor={{ false: COLORS.gray300, true: COLORS.primary }}
-              thumbColor={COLORS.white}
-            />
-          </View>
+          <NotificationToggle
+            title="Estado de Reportes"
+            subtitle="Actualizaciones de tus reportes"
+            color={COLORS.primary}
+            bg={COLORS.primaryLight}
+            value={localSettings?.reportUpdates ?? true}
+            onChange={(value) => handleToggle('reportUpdates', value)}
+            disabled={!masterEnabled || isGuest}
+          />
         </View>
 
-        {/* Notification Style */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ESTILO DE NOTIFICACIONES</Text>
 
-          <View style={styles.notificationItem}>
-            <View style={styles.notificationLeft}>
-              <View style={[styles.notificationIcon, { backgroundColor: COLORS.gray100 }]}>
-                <View style={styles.notificationIconInner} />
-              </View>
-              <View style={styles.notificationContent}>
-                <Text style={styles.notificationTitle}>Sonido</Text>
-                <Text style={styles.notificationSubtitle}>
-                  Reproducir sonido al recibir notificaciones
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={soundEnabled}
-              onValueChange={setSoundEnabled}
-              disabled={!allNotifications}
-              trackColor={{ false: COLORS.gray300, true: COLORS.primary }}
-              thumbColor={COLORS.white}
-            />
-          </View>
+          <NotificationToggle
+            title="Sonido"
+            subtitle="Reproducir sonido al recibir notificaciones"
+            color={COLORS.gray400}
+            bg={COLORS.gray100}
+            value={localSettings?.soundEnabled ?? true}
+            onChange={(value) => handleToggle('soundEnabled', value)}
+            disabled={!masterEnabled || isGuest}
+          />
 
-          <View style={styles.notificationItem}>
-            <View style={styles.notificationLeft}>
-              <View style={[styles.notificationIcon, { backgroundColor: COLORS.gray100 }]}>
-                <View style={styles.notificationIconInner} />
-              </View>
-              <View style={styles.notificationContent}>
-                <Text style={styles.notificationTitle}>Vibración</Text>
-                <Text style={styles.notificationSubtitle}>
-                  Vibrar al recibir notificaciones
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={vibrationEnabled}
-              onValueChange={setVibrationEnabled}
-              disabled={!allNotifications}
-              trackColor={{ false: COLORS.gray300, true: COLORS.primary }}
-              thumbColor={COLORS.white}
-            />
-          </View>
+          <NotificationToggle
+            title="Vibración"
+            subtitle="Vibrar al recibir alertas"
+            color={COLORS.gray400}
+            bg={COLORS.gray100}
+            value={localSettings?.vibrationEnabled ?? true}
+            onChange={(value) => handleToggle('vibrationEnabled', value)}
+            disabled={!masterEnabled || isGuest}
+          />
 
-          <TouchableOpacity style={styles.notificationItem} disabled={!allNotifications}>
-            <View style={styles.notificationLeft}>
-              <View style={[styles.notificationIcon, { backgroundColor: COLORS.gray100 }]}>
-                <View style={styles.notificationIconInner} />
-              </View>
-              <View style={styles.notificationContent}>
-                <Text style={styles.notificationTitle}>Tono de Notificación</Text>
-                <Text style={styles.notificationSubtitle}>
-                  Por defecto
-                </Text>
-              </View>
-            </View>
-            <View style={styles.chevron} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Email Notifications */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>OTRAS OPCIONES</Text>
-
-          <View style={styles.notificationItem}>
-            <View style={styles.notificationLeft}>
-              <View style={[styles.notificationIcon, { backgroundColor: COLORS.infoLight }]}>
-                <View style={styles.notificationIconInner} />
-              </View>
-              <View style={styles.notificationContent}>
-                <Text style={styles.notificationTitle}>Notificaciones por Email</Text>
-                <Text style={styles.notificationSubtitle}>
-                  Recibir resumen semanal
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={emailNotifications}
-              onValueChange={setEmailNotifications}
-              trackColor={{ false: COLORS.gray300, true: COLORS.primary }}
-              thumbColor={COLORS.white}
-            />
-          </View>
-
-          <TouchableOpacity style={styles.notificationItem}>
-            <View style={styles.notificationLeft}>
-              <View style={[styles.notificationIcon, { backgroundColor: COLORS.gray100 }]}>
-                <View style={styles.notificationIconInner} />
-              </View>
-              <View style={styles.notificationContent}>
-                <Text style={styles.notificationTitle}>Horario de Silencio</Text>
-                <Text style={styles.notificationSubtitle}>
-                  No configurado
-                </Text>
-              </View>
-            </View>
-            <View style={styles.chevron} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Info Box */}
-        <View style={styles.infoBox}>
-          <View style={styles.infoIcon} />
-          <Text style={styles.infoText}>
-            Las alertas críticas siempre se mostrarán, incluso si las notificaciones
-            están desactivadas, para garantizar tu seguridad.
-          </Text>
+          <NotificationToggle
+            title="Correo electrónico"
+            subtitle="Recibir alertas en tu email"
+            color={COLORS.gray400}
+            bg={COLORS.gray100}
+            value={localSettings?.emailNotifications ?? false}
+            onChange={(value) => handleToggle('emailNotifications', value)}
+            disabled={!masterEnabled || isGuest}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+interface ToggleProps {
+  title: string;
+  subtitle: string;
+  color: string;
+  bg: string;
+  value: boolean;
+  onChange: (value: boolean) => void;
+  disabled?: boolean;
+}
+
+const NotificationToggle = ({ title, subtitle, color, bg, value, onChange, disabled }: ToggleProps) => (
+  <View style={[styles.notificationItem, disabled && styles.disabled]}>
+    <View style={styles.notificationLeft}>
+      <View style={[styles.notificationIcon, { backgroundColor: bg }]}>
+        <View style={[styles.notificationIconInner, { backgroundColor: color }]} />
+      </View>
+      <View style={styles.notificationContent}>
+        <Text style={styles.notificationTitle}>{title}</Text>
+        <Text style={styles.notificationSubtitle}>{subtitle}</Text>
+      </View>
+    </View>
+    <Switch
+      value={value}
+      onValueChange={onChange}
+      disabled={disabled}
+      trackColor={{ false: COLORS.gray300, true: color }}
+      thumbColor={COLORS.white}
+    />
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -299,7 +201,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 24,
     paddingVertical: 16,
   },
@@ -313,14 +214,18 @@ const styles = StyleSheet.create({
     ...SHADOWS.small,
   },
   backIcon: {
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.gray700,
-    borderRadius: 4,
+    width: 12,
+    height: 12,
+    borderLeftWidth: 3,
+    borderBottomWidth: 3,
+    borderColor: COLORS.gray700,
+    transform: [{ rotate: '45deg' }],
   },
   headerTitle: {
-    fontSize: SIZES.xl,
-    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'center',
+    fontSize: SIZES.lg,
+    fontWeight: '600',
     color: COLORS.primary,
   },
   placeholder: {
@@ -328,14 +233,14 @@ const styles = StyleSheet.create({
   },
   masterSection: {
     paddingHorizontal: 24,
-    paddingVertical: 16,
+    marginBottom: 16,
   },
   masterCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 20,
+    padding: 16,
     ...SHADOWS.medium,
   },
   masterIcon: {
@@ -348,10 +253,10 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   masterIconInner: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: COLORS.primary,
-    borderRadius: 12,
   },
   masterContent: {
     flex: 1,
@@ -360,37 +265,35 @@ const styles = StyleSheet.create({
     fontSize: SIZES.base,
     fontWeight: '600',
     color: COLORS.gray900,
-    marginBottom: 4,
   },
   masterSubtitle: {
     fontSize: SIZES.sm,
     color: COLORS.gray500,
   },
   section: {
-    marginBottom: 24,
+    paddingHorizontal: 24,
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: SIZES.xs,
-    fontWeight: '700',
+    fontSize: SIZES.sm,
+    fontWeight: '600',
     color: COLORS.gray500,
-    paddingHorizontal: 24,
-    marginBottom: 12,
-    letterSpacing: 0.5,
+    marginBottom: 8,
   },
   notificationItem: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: COLORS.white,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.gray100,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    ...SHADOWS.small,
   },
   notificationLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    gap: 12,
   },
   notificationIcon: {
     width: 40,
@@ -398,55 +301,25 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
   notificationIconInner: {
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.gray600,
-    borderRadius: 4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
   },
   notificationContent: {
-    flex: 1,
+    maxWidth: '70%',
   },
   notificationTitle: {
     fontSize: SIZES.base,
-    fontWeight: '500',
+    fontWeight: '600',
     color: COLORS.gray900,
-    marginBottom: 2,
   },
   notificationSubtitle: {
     fontSize: SIZES.sm,
     color: COLORS.gray500,
   },
-  chevron: {
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.gray300,
-    borderRadius: 4,
-  },
-  infoBox: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.infoLight,
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 24,
-    marginBottom: 24,
-  },
-  infoIcon: {
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.info,
-    borderRadius: 10,
-    marginRight: 12,
-    marginTop: 2,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: SIZES.sm,
-    color: '#1E40AF',
-    lineHeight: 20,
+  disabled: {
+    opacity: 0.4,
   },
 });

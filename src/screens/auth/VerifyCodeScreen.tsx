@@ -13,13 +13,15 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { supabase } from '../../lib/supabase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VerifyCode'>;
 
 export default function VerifyCodeScreen({ navigation, route }: Props) {
-  const { email } = route.params;
+  const email = route.params?.email;
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
   const handleCodeChange = (text: string, index: number) => {
@@ -42,19 +44,44 @@ export default function VerifyCodeScreen({ navigation, route }: Props) {
   };
 
   const handleVerify = async () => {
+    if (!email) {
+      setErrorMessage('No pudimos identificar tu correo. Volvé al paso anterior.');
+      return;
+    }
+
+    if (code.some((digit) => !digit)) {
+      setErrorMessage('Completa el código de 6 dígitos.');
+      return;
+    }
+
     setLoading(true);
     const fullCode = code.join('');
-    // Simular verificación
-    setTimeout(() => {
+    setErrorMessage(null);
+
+    const { error } = await supabase.auth.verifyOtp({
+      type: 'email',
+      email,
+      token: fullCode,
+    });
+
+    if (error) {
+      setErrorMessage(error.message);
       setLoading(false);
-      navigation.navigate('ResetPassword', { code: fullCode });
-    }, 1500);
+      return;
+    }
+
+    setLoading(false);
+    navigation.navigate('ResetPassword');
   };
 
-  const handleResend = () => {
-    // Lógica para reenviar código
+  const handleResend = async () => {
+    if (!email) return;
     setCode(['', '', '', '', '', '']);
     inputRefs.current[0]?.focus();
+    await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: false },
+    });
   };
 
   return (
@@ -81,7 +108,7 @@ export default function VerifyCodeScreen({ navigation, route }: Props) {
           <Text style={styles.subtitle}>
             Ingresa el código de 6 dígitos que enviamos a
           </Text>
-          <Text style={styles.email}>{email}</Text>
+          <Text style={styles.email}>{email ?? 'tu correo'}</Text>
         </View>
 
         <View style={styles.formContainer}>
@@ -106,11 +133,13 @@ export default function VerifyCodeScreen({ navigation, route }: Props) {
             El código expira en <Text style={styles.timerBold}>04:59</Text>
           </Text>
 
+          {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+
           <Button
             title="Verificar Código"
             onPress={handleVerify}
             loading={loading}
-            disabled={code.some((digit) => !digit)}
+            disabled={code.some((digit) => !digit) || loading}
             style={styles.verifyButton}
           />
 
@@ -228,6 +257,12 @@ const styles = StyleSheet.create({
   timerBold: {
     fontWeight: 'bold',
     color: COLORS.gray900,
+  },
+  errorText: {
+    color: COLORS.error,
+    textAlign: 'center',
+    marginBottom: 12,
+    fontSize: SIZES.sm,
   },
   verifyButton: {
     marginBottom: 16,

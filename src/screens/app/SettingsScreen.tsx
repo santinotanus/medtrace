@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,19 +9,28 @@ import {
   Switch,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types';
+import { RootStackParamList, UserSettings } from '../../types';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { useAuth } from '../../hooks/useAuth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
 export default function SettingsScreen({ navigation }: Props) {
-  const [darkMode, setDarkMode] = React.useState(false);
-  const [biometrics, setBiometrics] = React.useState(true);
-  const [autoSync, setAutoSync] = React.useState(true);
+  const { userSettings, updateUserSettings, isGuest } = useAuth();
+  const [localSettings, setLocalSettings] = useState<UserSettings | null>(userSettings);
+
+  useEffect(() => {
+    setLocalSettings(userSettings);
+  }, [userSettings]);
+
+  const handleToggle = async (key: keyof UserSettings, value: boolean) => {
+    if (!localSettings) return;
+    setLocalSettings({ ...localSettings, [key]: value });
+    await updateUserSettings({ [key]: value });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -34,7 +43,6 @@ export default function SettingsScreen({ navigation }: Props) {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Account Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>CUENTA</Text>
 
@@ -57,19 +65,8 @@ export default function SettingsScreen({ navigation }: Props) {
             </View>
             <View style={styles.chevron} />
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: COLORS.primaryLight }]}>
-                <View style={styles.menuIconInner} />
-              </View>
-              <Text style={styles.menuItemText}>Verificación en 2 pasos</Text>
-            </View>
-            <View style={styles.chevron} />
-          </TouchableOpacity>
         </View>
 
-        {/* Preferences Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>PREFERENCIAS</Text>
 
@@ -80,14 +77,13 @@ export default function SettingsScreen({ navigation }: Props) {
               </View>
               <View>
                 <Text style={styles.menuItemText}>Modo Oscuro</Text>
-                <Text style={styles.menuItemSubtext}>
-                  Reduce el brillo de la pantalla
-                </Text>
+                <Text style={styles.menuItemSubtext}>Reduce el brillo de la pantalla</Text>
               </View>
             </View>
             <Switch
-              value={darkMode}
-              onValueChange={setDarkMode}
+              value={localSettings?.darkMode ?? false}
+              onValueChange={(value) => handleToggle('darkMode', value)}
+              disabled={isGuest}
               trackColor={{ false: COLORS.gray300, true: COLORS.primary }}
               thumbColor={COLORS.white}
             />
@@ -101,7 +97,9 @@ export default function SettingsScreen({ navigation }: Props) {
               <Text style={styles.menuItemText}>Idioma</Text>
             </View>
             <View style={styles.languageContainer}>
-              <Text style={styles.languageText}>Español</Text>
+              <Text style={styles.languageText}>
+                {(localSettings?.language ?? 'es').toUpperCase()}
+              </Text>
               <View style={styles.chevron} />
             </View>
           </TouchableOpacity>
@@ -113,27 +111,26 @@ export default function SettingsScreen({ navigation }: Props) {
               </View>
               <View>
                 <Text style={styles.menuItemText}>Biometría</Text>
-                <Text style={styles.menuItemSubtext}>
-                  Usar huella/Face ID
-                </Text>
+                <Text style={styles.menuItemSubtext}>Usar huella/Face ID</Text>
               </View>
             </View>
             <Switch
-              value={biometrics}
-              onValueChange={setBiometrics}
+              value={localSettings?.biometricsEnabled ?? false}
+              onValueChange={(value) => handleToggle('biometricsEnabled', value)}
+              disabled={isGuest}
               trackColor={{ false: COLORS.gray300, true: COLORS.primary }}
               thumbColor={COLORS.white}
             />
           </View>
         </View>
 
-        {/* Notifications Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>NOTIFICACIONES</Text>
 
           <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigation.navigate('NotificationsSettings' as any)}
+            style={[styles.menuItem, isGuest && styles.disabled]}
+            onPress={() => navigation.navigate('NotificationsSettings')}
+            disabled={isGuest}
           >
             <View style={styles.menuItemLeft}>
               <View style={[styles.menuIcon, { backgroundColor: COLORS.successLight }]}>
@@ -151,27 +148,25 @@ export default function SettingsScreen({ navigation }: Props) {
               </View>
               <View>
                 <Text style={styles.menuItemText}>Sincronización Automática</Text>
-                <Text style={styles.menuItemSubtext}>
-                  Actualizar alertas en segundo plano
-                </Text>
+                <Text style={styles.menuItemSubtext}>Actualizar alertas en segundo plano</Text>
               </View>
             </View>
             <Switch
-              value={autoSync}
-              onValueChange={setAutoSync}
+              value={localSettings?.autoSync ?? true}
+              onValueChange={(value) => handleToggle('autoSync', value)}
+              disabled={isGuest}
               trackColor={{ false: COLORS.gray300, true: COLORS.primary }}
               thumbColor={COLORS.white}
             />
           </View>
         </View>
 
-        {/* Privacy & Security */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>PRIVACIDAD Y SEGURIDAD</Text>
 
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => navigation.navigate('Privacy' as any)}
+            onPress={() => navigation.navigate('Privacy')}
           >
             <View style={styles.menuItemLeft}>
               <View style={[styles.menuIcon, { backgroundColor: COLORS.gray100 }]}>
@@ -191,56 +186,8 @@ export default function SettingsScreen({ navigation }: Props) {
             </View>
             <View style={styles.chevron} />
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: COLORS.gray100 }]}>
-                <View style={styles.menuIconInner} />
-              </View>
-              <Text style={styles.menuItemText}>Permisos de la App</Text>
-            </View>
-            <View style={styles.chevron} />
-          </TouchableOpacity>
         </View>
 
-        {/* Data Management */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>GESTIÓN DE DATOS</Text>
-
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: COLORS.infoLight }]}>
-                <View style={styles.menuIconInner} />
-              </View>
-              <Text style={styles.menuItemText}>Descargar mis Datos</Text>
-            </View>
-            <View style={styles.chevron} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: COLORS.warningLight }]}>
-                <View style={styles.menuIconInner} />
-              </View>
-              <Text style={styles.menuItemText}>Limpiar Caché</Text>
-            </View>
-            <View style={styles.chevron} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: COLORS.errorLight }]}>
-                <View style={styles.menuIconInner} />
-              </View>
-              <Text style={[styles.menuItemText, { color: COLORS.error }]}>
-                Eliminar Cuenta
-              </Text>
-            </View>
-            <View style={styles.chevron} />
-          </TouchableOpacity>
-        </View>
-
-        {/* App Info */}
         <View style={styles.appInfo}>
           <Text style={styles.appVersion}>Versión 1.0.0</Text>
           <Text style={styles.appCopyright}>© 2024 MedTrace</Text>
@@ -258,7 +205,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 24,
     paddingVertical: 16,
   },
@@ -272,44 +218,47 @@ const styles = StyleSheet.create({
     ...SHADOWS.small,
   },
   backIcon: {
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.gray700,
-    borderRadius: 4,
+    width: 12,
+    height: 12,
+    borderLeftWidth: 3,
+    borderBottomWidth: 3,
+    borderColor: COLORS.gray700,
+    transform: [{ rotate: '45deg' }],
   },
   headerTitle: {
-    fontSize: SIZES.xl,
-    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'center',
+    fontSize: SIZES.lg,
+    fontWeight: '600',
     color: COLORS.primary,
   },
   placeholder: {
     width: 40,
   },
   section: {
-    marginBottom: 32,
+    paddingHorizontal: 24,
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: SIZES.xs,
-    fontWeight: '700',
+    fontSize: SIZES.sm,
+    fontWeight: '600',
     color: COLORS.gray500,
-    paddingHorizontal: 24,
-    marginBottom: 12,
-    letterSpacing: 0.5,
+    marginBottom: 8,
   },
   menuItem: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: COLORS.white,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.gray100,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+    ...SHADOWS.small,
   },
   menuItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    gap: 12,
   },
   menuIcon: {
     width: 40,
@@ -317,29 +266,29 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
   menuIconInner: {
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.gray600,
-    borderRadius: 4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: COLORS.gray700,
   },
   menuItemText: {
     fontSize: SIZES.base,
-    fontWeight: '500',
+    fontWeight: '600',
     color: COLORS.gray900,
   },
   menuItemSubtext: {
     fontSize: SIZES.sm,
     color: COLORS.gray500,
-    marginTop: 2,
   },
   chevron: {
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.gray300,
-    borderRadius: 4,
+    width: 12,
+    height: 12,
+    borderRightWidth: 2,
+    borderTopWidth: 2,
+    borderColor: COLORS.gray400,
+    transform: [{ rotate: '45deg' }],
   },
   languageContainer: {
     flexDirection: 'row',
@@ -348,19 +297,22 @@ const styles = StyleSheet.create({
   },
   languageText: {
     fontSize: SIZES.base,
-    color: COLORS.gray600,
+    color: COLORS.gray900,
   },
   appInfo: {
     alignItems: 'center',
-    paddingVertical: 32,
+    marginTop: 16,
+    marginBottom: 32,
   },
   appVersion: {
     fontSize: SIZES.sm,
     color: COLORS.gray500,
-    marginBottom: 4,
   },
   appCopyright: {
     fontSize: SIZES.sm,
-    color: COLORS.gray400,
+    color: COLORS.gray500,
+  },
+  disabled: {
+    opacity: 0.4,
   },
 });
