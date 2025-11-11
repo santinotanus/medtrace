@@ -211,7 +211,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
               <Text style={[styles.statNumber, { color: COLORS.success }]}>
                 {statsLoading && !stats ? '...' : statsDisplay.verified}
               </Text>
-              <Text style={styles.statLabel}>Verificados</Text>
+              <Text style={styles.statLabel}>Escaneos</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

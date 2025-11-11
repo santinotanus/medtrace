@@ -37,15 +37,12 @@ const MenuItem: React.FC<MenuItemProps> = ({
 }) => (
   <TouchableOpacity style={styles.menuItem} onPress={onPress}>
     <View style={styles.menuItemLeft}>
-      <View style={[styles.menuIcon, { backgroundColor: iconBg }]}>
-        <View style={styles.menuIconInner} />
-      </View>
+      <View style={[styles.menuIcon, { backgroundColor: iconBg }]} />
       <View style={styles.menuItemText}>
         <Text style={styles.menuItemTitle}>{title}</Text>
         <Text style={styles.menuItemSubtitle}>{subtitle}</Text>
       </View>
     </View>
-    <View style={styles.menuArrow} />
   </TouchableOpacity>
 );
 
@@ -151,7 +148,7 @@ export default function ProfileScreen() {
               <Text style={[styles.statNumber, { color: COLORS.success }]}>
                 {statsLoading && !stats ? '...' : stats?.verified ?? 0}
               </Text>
-              <Text style={styles.statLabel}>Verificados</Text>
+              <Text style={styles.statLabel}>Escaneos</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -185,6 +182,24 @@ export default function ProfileScreen() {
             subtitle="Editar información"
             onPress={() => stackNav?.navigate('Settings')}
           />
+
+          <MenuItem
+            icon="document"
+            iconBg={COLORS.warningLight}
+            title="Mis Reportes"
+            subtitle="Ver historial de reportes"
+            onPress={() => stackNav?.navigate('MyReports')}
+          />
+
+          {profile?.role === 'ADMIN' && (
+            <MenuItem
+              icon="admin"
+              iconBg={COLORS.errorLight}
+              title="Gestionar Reportes"
+              subtitle="Panel administrativo"
+              onPress={() => stackNav?.navigate('AdminReports')}
+            />
+          )}
 
           <MenuItem
             icon="bell"
@@ -316,12 +331,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
-  menuIconInner: {
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.gray600,
-    borderRadius: 4,
-  },
   menuItemText: {
     flex: 1,
   },
@@ -334,12 +343,6 @@ const styles = StyleSheet.create({
   menuItemSubtitle: {
     fontSize: SIZES.sm,
     color: COLORS.gray500,
-  },
-  menuArrow: {
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.gray400,
-    borderRadius: 4,
   },
   logoutButton: {
     backgroundColor: COLORS.errorLight,

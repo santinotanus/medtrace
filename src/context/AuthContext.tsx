@@ -91,14 +91,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
         user_settings: incomingUserSettings,
         notification_settings: incomingNotificationSettings,
         ...rest
-      } = data as Profile & {
-        user_settings: UserSettings | null;
-        notification_settings: NotificationSettings | null;
-      };
+      } = data as any;
 
       setProfile(rest);
-      setUserSettingsState(incomingUserSettings ?? null);
-      setNotificationSettingsState(incomingNotificationSettings ?? null);
+      // Supabase devuelve arrays para las relaciones, tomar el primer elemento
+      setUserSettingsState(
+        Array.isArray(incomingUserSettings) && incomingUserSettings.length > 0
+          ? incomingUserSettings[0]
+          : null
+      );
+      setNotificationSettingsState(
+        Array.isArray(incomingNotificationSettings) && incomingNotificationSettings.length > 0
+          ? incomingNotificationSettings[0]
+          : null
+      );
     }
 
     setLoadingProfile(false);
@@ -182,10 +188,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const updateNotificationSettings = useCallback(
     async (payload: Partial<NotificationSettings>) => {
       if (!profile) return;
+      
+      // Usar upsert para crear el registro si no existe
       const { data, error } = await supabase
         .from('notification_settings')
-        .update({ ...payload, updatedAt: new Date().toISOString() })
-        .eq('userId', profile.id)
+        .upsert(
+          { 
+            userId: profile.id, 
+            ...payload, 
+            updatedAt: new Date().toISOString() 
+          },
+          { onConflict: 'userId' }
+        )
         .select()
         .single();
 
@@ -202,10 +216,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const updateUserSettings = useCallback(
     async (payload: Partial<UserSettings>) => {
       if (!profile) return;
+      
+      // Usar upsert para crear el registro si no existe
       const { data, error } = await supabase
         .from('user_settings')
-        .update({ ...payload, updatedAt: new Date().toISOString() })
-        .eq('userId', profile.id)
+        .upsert(
+          { 
+            userId: profile.id, 
+            ...payload, 
+            updatedAt: new Date().toISOString() 
+          },
+          { onConflict: 'userId' }
+        )
         .select()
         .single();
 

@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Linking,
+  Alert,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, AlertRecord } from '../../types';
@@ -15,13 +16,51 @@ import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { formatDate } from '../../utils/format';
+import { useAuth } from '../../hooks/useAuth';
+import { useBiometrics } from '../../hooks/useBiometrics';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AlertDetail'>;
 
 export default function AlertDetailScreen({ navigation, route }: Props) {
   const { alertId } = route.params;
+  const { userSettings, isGuest } = useAuth();
+  const { isAvailable, authenticate } = useBiometrics();
   const [alert, setAlert] = useState<AlertRecord | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
+
+  const biometricsEnabled = userSettings?.biometricsEnabled ?? false;
+  const shouldRequireBiometrics = biometricsEnabled && isAvailable && !isGuest;
+
+  useEffect(() => {
+    if (shouldRequireBiometrics && !authenticated) {
+      requestBiometricAuth();
+    } else {
+      fetchAlert();
+    }
+  }, [shouldRequireBiometrics, authenticated]);
+
+  const requestBiometricAuth = async () => {
+    const success = await authenticate('Confirma tu identidad para ver la alerta médica');
+    
+    if (success) {
+      setAuthenticated(true);
+      fetchAlert();
+    } else {
+      Alert.alert(
+        'Autenticación requerida',
+        'Debes autenticarte para ver detalles de alertas médicas.',
+        [
+          { text: 'Reintentar', onPress: requestBiometricAuth },
+          {
+            text: 'Cancelar',
+            style: 'cancel',
+            onPress: () => navigation.goBack(),
+          },
+        ]
+      );
+    }
+  };
 
   const fetchAlert = useCallback(async () => {
     setLoading(true);

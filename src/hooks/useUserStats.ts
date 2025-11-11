@@ -17,12 +17,37 @@ export function useUserStats(refreshKey?: unknown) {
 
     setLoading(true);
     setError(null);
-    const { data, error: fnError } = await supabase.functions.invoke<UserStats>('get-user-stats');
-    if (fnError) {
-      setError(fnError.message);
-    } else if (data) {
-      setStats(data);
+
+    try {
+      const userId = session.user.id;
+
+      // Obtener escaneos verificados
+      const { count: verifiedCount } = await supabase
+        .from('scan_history')
+        .select('*', { count: 'exact', head: true })
+        .eq('userId', userId);
+
+      // Obtener alertas activas (isActive = true)
+      const { count: alertsCount } = await supabase
+        .from('alert')
+        .select('*', { count: 'exact', head: true })
+        .eq('isActive', true);
+
+      // Obtener reportes del usuario (excluir anónimos)
+      const { count: reportsCount } = await supabase
+        .from('report')
+        .select('*', { count: 'exact', head: true })
+        .eq('userId', userId);
+
+      setStats({
+        verified: verifiedCount ?? 0,
+        alerts: alertsCount ?? 0,
+        reports: reportsCount ?? 0,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al obtener estadísticas');
     }
+
     setLoading(false);
   }, [session?.user, isGuest]);
 

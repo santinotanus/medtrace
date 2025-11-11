@@ -28,10 +28,16 @@ import AlertsScreen from '../screens/app/AlertsScreen';
 import ReportScreen from '../screens/app/ReportScreen';
 import AlertDetailScreen from '../screens/app/AlertDetailScreen';
 import SettingsScreen from '../screens/app/SettingsScreen';
+import EditProfileScreen from '../screens/app/EditProfileScreen';
+import ChangePasswordScreen from '../screens/app/ChangePasswordScreen';
 import NotificationsSettingsScreen from '../screens/app/NotificationsSettingsScreen';
 import PrivacyScreen from '../screens/app/PrivacyScreen';
 import HelpScreen from '../screens/app/HelpScreen';
 import AboutScreen from '../screens/app/AboutScreen';
+import MyReportsScreen from '../screens/app/MyReportsScreen';
+import ReportDetailScreen from '../screens/app/ReportDetailScreen';
+import AdminReportsScreen from '../screens/app/AdminReportsScreen';
+import CreateAlertScreen from '../screens/app/CreateAlertScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -39,6 +45,11 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 const TabIcon = ({ focused }: { focused: boolean }) => (
   <View style={[styles.tabIcon, focused && styles.tabIconActive]} />
 );
+
+// Dummy component for Scan tab (navigation handled by listener)
+function ScanTabPlaceholder() {
+  return null;
+}
 
 function MainTabs({ navigation }: NativeStackScreenProps<RootStackParamList, 'MainTabs'>) {
   const { isGuest } = useAuth();
@@ -64,7 +75,7 @@ function MainTabs({ navigation }: NativeStackScreenProps<RootStackParamList, 'Ma
       />
       <Tab.Screen
         name="Scan"
-        component={ScannerScreen}
+        component={ScanTabPlaceholder}
         listeners={{
           tabPress: (e) => {
             e.preventDefault();
@@ -124,6 +135,8 @@ function AppStack() {
     >
       <Stack.Screen name="MainTabs" component={MainTabs} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
       <Stack.Screen name="NotificationsSettings" component={NotificationsSettingsScreen} />
       <Stack.Screen name="Privacy" component={PrivacyScreen} />
       <Stack.Screen name="Help" component={HelpScreen} />
@@ -144,6 +157,10 @@ function AppStack() {
         options={{ presentation: 'modal' }}
       />
       <Stack.Screen name="Report" component={ReportScreen} />
+      <Stack.Screen name="MyReports" component={MyReportsScreen} />
+      <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
+      <Stack.Screen name="AdminReports" component={AdminReportsScreen} />
+      <Stack.Screen name="CreateAlert" component={CreateAlertScreen} />
       <Stack.Screen name="Alerts" component={AlertsScreen} />
       <Stack.Screen name="AlertDetail" component={AlertDetailScreen} />
     </Stack.Navigator>

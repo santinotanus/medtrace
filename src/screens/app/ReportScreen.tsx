@@ -98,7 +98,7 @@ export default function ReportScreen({ navigation, route }: Props) {
       if (error) {
         console.error('[Report] Error cargando lotes:', error.message);
       } else if (data) {
-        setBatchOptions(data as BatchRecord[]);
+        setBatchOptions(data as unknown as BatchRecord[]);
       }
       setLoadingBatches(false);
     };
@@ -137,7 +137,7 @@ export default function ReportScreen({ navigation, route }: Props) {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
+        mediaTypes: ['images'] as any,
         quality: 0.7,
       });
 
@@ -308,10 +308,10 @@ export default function ReportScreen({ navigation, route }: Props) {
                       onPress={() => handleSelectBatch(item)}
                     >
                       <Text style={styles.suggestionTitle}>
-                        {item.batchNumber ?? 'Sin número'}
+                        {item.medicine?.name ?? 'Medicamento'} {item.medicine?.dosage ?? ''}
                       </Text>
                       <Text style={styles.suggestionSubtitle}>
-                        {item.medicine?.name ?? 'Medicamento'} · {item.qrCode ?? 'QR sin definir'}
+                        Lote: {item.batchNumber ?? 'Sin número'} · QR: {item.qrCode ?? 'Sin definir'}
                       </Text>
                     </TouchableOpacity>
                   ))}

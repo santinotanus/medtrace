@@ -131,6 +131,32 @@ export interface ScanHistoryEntry {
   batch?: BatchRecord | null;
 }
 
+export interface ReportRecord {
+  id: string;
+  userId?: string | null;
+  batchId: string;
+  type: ReportType;
+  description: string;
+  severity: Severity;
+  isAnonymous: boolean;
+  status: ReportStatus;
+  photos?: string[] | null;
+  reviewedBy?: string | null;
+  reviewNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  batch?: BatchRecord | null;
+  reviewer?: {
+    id: string;
+    name: string;
+  } | null;
+  reporter?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+}
+
 export interface UserStats {
   verified: number;
   alerts: number;
@@ -153,9 +179,15 @@ export type RootStackParamList = {
   ScanResultSafe: { batch: BatchRecord };
   ScanResultAlert: { batch: BatchRecord };
   Report: { batchId?: string; presetMedicine?: string; presetBatchNumber?: string } | undefined;
+  MyReports: undefined;
+  ReportDetail: { reportId: string };
+  AdminReports: undefined;
+  CreateAlert: { reportId?: string; batchId?: string } | undefined;
   Alerts: undefined;
   AlertDetail: { alertId: string };
   Settings: undefined;
+  EditProfile: undefined;
+  ChangePassword: undefined;
   NotificationsSettings: undefined;
   Privacy: undefined;
   Help: undefined;
