@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.medtrace.app"
+      "bundleIdentifier": "com.medtrace.app",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Usamos Face ID para proteger tus datos médicos y mantener tu información segura."
+      }
     },
     "android": {
       "adaptiveIcon": {

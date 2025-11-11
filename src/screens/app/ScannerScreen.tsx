@@ -24,7 +24,7 @@ type Props = CompositeScreenProps<
 >;
 
 export default function ScannerScreen({ navigation }: Props) {
-  const { isGuest, exitGuestMode } = useAuth();
+  const { isGuest, exitGuestMode, session } = useAuth();
   const [permission, requestPermission] = useCameraPermissions();
   const [hasPermission, setHasPermission] = useState<'unknown' | 'granted' | 'denied'>('unknown');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -52,25 +52,52 @@ export default function ScannerScreen({ navigation }: Props) {
       setIsProcessing(true);
       setErrorMessage(null);
 
-      const { data, error } = await supabase.functions.invoke<BatchRecord>('scan-batch', {
-        body: { qrCode: qrData },
-      });
+      try {
+        // Buscar el lote directamente en la base de datos
+        const { data: batchData, error } = await supabase
+          .from('batch')
+          .select(`
+            *,
+            medicine:medicineId (*),
+            alerts:alert!batchId (*)
+          `)
+          .eq('qrCode', qrData)
+          .maybeSingle();
 
-      if (error || !data) {
-        setErrorMessage(
-          error?.message === 'Lote no encontrado'
-            ? 'No encontramos ese lote. Verifica el código o vuelve a intentarlo.'
-            : error?.message ?? 'Ocurrió un error al validar el QR.',
-        );
+        if (error || !batchData) {
+          setErrorMessage('No encontramos ese lote. Verifica el código o vuelve a intentarlo.');
+          setIsProcessing(false);
+          scannedOnceRef.current = false;
+          return;
+        }
+
+        // Determinar el resultado del escaneo basado en el estado del lote
+        const batch = batchData as BatchRecord;
+        batch.scanResult = batch.status === 'SAFE' ? 'SAFE' : 
+                           batch.status === 'ALERT' ? 'ALERT' : 'WARNING';
+
+        // Guardar en historial si el usuario está autenticado
+        if (session?.user && !isGuest) {
+          await supabase
+            .from('scan_history')
+            .insert({
+              userId: session.user.id,
+              batchId: batch.id,
+              result: batch.scanResult,
+              scannedAt: new Date().toISOString(),
+            });
+        }
+
+        const targetScreen = batch.scanResult === 'SAFE' ? 'ScanResultSafe' : 'ScanResultAlert';
+        navigation.replace(targetScreen, { batch });
         setIsProcessing(false);
         scannedOnceRef.current = false;
-        return;
+      } catch (err) {
+        console.error('[Scanner] Error escaneando:', err);
+        setErrorMessage('Ocurrió un error al validar el QR.');
+        setIsProcessing(false);
+        scannedOnceRef.current = false;
       }
-
-      const targetScreen = data.scanResult === 'SAFE' ? 'ScanResultSafe' : 'ScanResultAlert';
-      navigation.replace(targetScreen, { batch: data });
-      setIsProcessing(false);
-      scannedOnceRef.current = false;
     },
     [isProcessing, navigation],
   );
@@ -136,7 +163,7 @@ export default function ScannerScreen({ navigation }: Props) {
             {isProcessing ? (
               <>
                 <ActivityIndicator color={COLORS.primary} />
-                <Text style={styles.instructionsTitle}>Validando en Supabase...</Text>
+                <Text style={styles.instructionsTitle}>Validando código...</Text>
               </>
             ) : (
               <>
