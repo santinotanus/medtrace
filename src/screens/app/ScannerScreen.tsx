@@ -57,12 +57,61 @@ export default function ScannerScreen({ navigation }: Props) {
         const { data: batchData, error } = await supabase
           .from('batch')
           .select(`
-            *,
-            medicine:medicineId (*),
-            alerts:alert!batchId (*)
+            id,
+            batchNumber,
+            qrCode,
+            expirationDate,
+            manufacturingDate,
+            status,
+            blockchainHash,
+            createdAt,
+            updatedAt,
+            medicine:medicineId ( 
+              id,
+              name,
+              dosage,
+              laboratory,
+              anmatRegistry,
+              description,
+              activeIngredient,
+              status,
+              createdAt,
+              updatedAt
+            ),
+            alerts:alert!batchId (
+              id,
+              type,
+              title,
+              message,
+              reason,
+              recommendations,
+              medicineId,
+              batchId,
+              isActive,
+              publishedAt,
+              expiresAt,
+              officialDocumentUrl,
+              contactInfo,
+              createdAt,
+              updatedAt
+            ),
+            trace_steps:traceability_step (
+              id,
+              batchId,
+              step,
+              title,
+              description,
+              location,
+              timestamp,
+              status,
+              verifiedBy,
+              createdAt
+            )
           `)
           .eq('qrCode', qrData)
           .maybeSingle();
+        console.log('[Scanner] batchData', JSON.stringify(batchData, null, 2));
+
 
         if (error || !batchData) {
           setErrorMessage('No encontramos ese lote. Verifica el código o vuelve a intentarlo.');
@@ -72,7 +121,7 @@ export default function ScannerScreen({ navigation }: Props) {
         }
 
         // Determinar el resultado del escaneo basado en el estado del lote
-        const batch = batchData as BatchRecord;
+        const batch = batchData as unknown as BatchRecord;
         batch.scanResult = batch.status === 'SAFE' ? 'SAFE' : 
                            batch.status === 'ALERT' ? 'ALERT' : 'WARNING';
 
