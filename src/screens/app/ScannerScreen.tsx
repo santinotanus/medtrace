@@ -17,6 +17,7 @@ import { RootStackParamList, MainTabParamList, BatchRecord } from '../../types';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { ChevronLeftIcon } from '../../components/Icons';
 
 type Props = CompositeScreenProps<
   NativeStackScreenProps<RootStackParamList, 'Scanner'>,
@@ -247,9 +248,7 @@ export default function ScannerScreen({ navigation }: Props) {
           style={styles.headerButton}
           onPress={() => navigation.goBack()}
         >
-          <View style={styles.backIcon}>
-            <View style={styles.backArrow} />
-          </View>
+          <ChevronLeftIcon size={24} color={COLORS.gray700} strokeWidth={2.5} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Escanear Medicamento</Text>
         <View style={styles.headerButton} />
@@ -279,20 +278,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOWS.small,
-  },
-  backIcon: {
-    width: 20,
-    height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backArrow: {
-    width: 12,
-    height: 12,
-    borderLeftWidth: 3,
-    borderBottomWidth: 3,
-    borderColor: COLORS.gray700,
-    transform: [{ rotate: '45deg' }],
   },
   headerTitle: {
     fontSize: SIZES.lg,

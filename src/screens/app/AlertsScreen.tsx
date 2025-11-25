@@ -15,6 +15,7 @@ import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { formatRelativeTime } from '../../utils/format';
+import { ChevronLeftIcon, AlertTriangleIcon, ChevronRightIcon } from '../../components/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Alerts'>;
 
@@ -108,7 +109,7 @@ export default function AlertsScreen({ navigation }: Props) {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <View style={styles.backIcon} />
+            <ChevronLeftIcon size={24} color={COLORS.gray700} strokeWidth={2.5} />
           </TouchableOpacity>
           <View>
             <Text style={styles.title}>Alertas Sanitarias</Text>
@@ -199,12 +200,7 @@ export default function AlertsScreen({ navigation }: Props) {
                       { backgroundColor: style.iconBg },
                     ]}
                   >
-                    <View
-                      style={[
-                        styles.alertIcon,
-                        { backgroundColor: style.iconColor },
-                      ]}
-                    />
+                    <AlertTriangleIcon size={24} color={style.iconColor} strokeWidth={2} />
                   </View>
                   <View style={styles.alertContent}>
                     <View style={styles.alertMeta}>
@@ -225,7 +221,7 @@ export default function AlertsScreen({ navigation }: Props) {
                     <Text style={styles.alertMessage}>{alert.message}</Text>
                     <View style={styles.linkContainer}>
                       <Text style={styles.alertLink}>Ver detalles</Text>
-                      <View style={styles.arrow} />
+                      <ChevronRightIcon size={16} color={COLORS.primary} strokeWidth={2.5} />
                     </View>
                   </View>
                 </View>
@@ -260,14 +256,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOWS.small,
-  },
-  backIcon: {
-    width: 12,
-    height: 12,
-    borderLeftWidth: 3,
-    borderBottomWidth: 3,
-    borderColor: COLORS.gray700,
-    transform: [{ rotate: '45deg' }],
   },
   title: {
     fontSize: SIZES.xxl,
@@ -333,11 +321,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  alertIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-  },
   alertContent: {
     flex: 1,
   },
@@ -380,14 +363,6 @@ const styles = StyleSheet.create({
     fontSize: SIZES.sm,
     fontWeight: '600',
     color: COLORS.primary,
-  },
-  arrow: {
-    width: 12,
-    height: 12,
-    borderTopWidth: 2,
-    borderRightWidth: 2,
-    borderColor: COLORS.primary,
-    transform: [{ rotate: '45deg' }],
   },
   loader: {
     flexDirection: 'row',

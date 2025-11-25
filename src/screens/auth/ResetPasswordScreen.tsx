@@ -15,6 +15,7 @@ import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { CheckCircleIcon } from '../../components/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ResetPassword'>;
 
@@ -103,12 +104,11 @@ export default function ResetPasswordScreen({ navigation }: Props) {
             <Text style={styles.requirementsTitle}>Tu contraseña debe contener:</Text>
             {requirements.map((req, index) => (
               <View key={index} style={styles.requirement}>
-                <View
-                  style={[
-                    styles.requirementIcon,
-                    req.met && styles.requirementIconMet,
-                  ]}
-                />
+                {req.met ? (
+                  <CheckCircleIcon size={20} color={COLORS.success} strokeWidth={2} />
+                ) : (
+                  <View style={styles.requirementIconEmpty} />
+                )}
                 <Text
                   style={[
                     styles.requirementText,
@@ -221,6 +221,13 @@ const styles = StyleSheet.create({
     height: 16,
     borderRadius: 8,
     backgroundColor: COLORS.gray400,
+    marginRight: 8,
+  },
+  requirementIconEmpty: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: COLORS.gray300,
     marginRight: 8,
   },
   requirementIconMet: {

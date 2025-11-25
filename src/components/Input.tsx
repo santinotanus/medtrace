@@ -9,6 +9,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
+import { EyeIcon, EyeOffIcon } from './Icons';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -57,12 +58,11 @@ export default function Input({
             onPress={() => setIsPasswordVisible(!isPasswordVisible)}
             activeOpacity={0.7}
           >
-            <View
-              style={[
-                styles.eyeIcon,
-                isPasswordVisible && styles.eyeIconVisible,
-              ]}
-            />
+            {isPasswordVisible ? (
+              <EyeIcon size={20} color={COLORS.primary} strokeWidth={2} />
+            ) : (
+              <EyeOffIcon size={20} color={COLORS.gray400} strokeWidth={2} />
+            )}
           </TouchableOpacity>
         )}
       </View>
@@ -116,15 +116,6 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  eyeIcon: {
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.gray400,
-    borderRadius: 4,
-  },
-  eyeIconVisible: {
-    backgroundColor: COLORS.primary,
   },
   errorText: {
     fontSize: SIZES.xs,

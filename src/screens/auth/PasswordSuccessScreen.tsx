@@ -4,6 +4,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { CheckCircleIcon, ShieldIcon } from '../../components/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PasswordSuccess'>;
 
@@ -21,7 +22,7 @@ export default function PasswordSuccessScreen({ navigation, route }: Props) {
     >
       <View style={styles.content}>
         <View style={styles.successIconContainer}>
-          <View style={styles.successIcon} />
+          <CheckCircleIcon size={64} color={COLORS.success} strokeWidth={2.5} />
         </View>
 
         <Text style={styles.title}>¡Contraseña Restablecida!</Text>
@@ -31,7 +32,7 @@ export default function PasswordSuccessScreen({ navigation, route }: Props) {
 
         <View style={styles.card}>
           <View style={styles.cardIconContainer}>
-            <View style={styles.cardIcon} />
+            <ShieldIcon size={48} color={COLORS.success} strokeWidth={2} />
           </View>
           <Text style={styles.cardTitle}>Tu cuenta está segura</Text>
           <Text style={styles.cardSubtitle}>

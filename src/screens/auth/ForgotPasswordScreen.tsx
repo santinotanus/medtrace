@@ -15,6 +15,7 @@ import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { HelpCircleIcon } from '../../components/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
 
@@ -97,7 +98,7 @@ export default function ForgotPasswordScreen({ navigation }: Props) {
         </View>
 
         <View style={styles.infoBox}>
-          <View style={styles.infoIcon} />
+          <HelpCircleIcon size={32} color={COLORS.primary} strokeWidth={2} />
           <View style={styles.infoContent}>
             <Text style={styles.infoTitle}>Revisa tu bandeja de entrada</Text>
             <Text style={styles.infoText}>
@@ -188,14 +189,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 24,
-  },
-  infoIcon: {
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.info,
-    borderRadius: 10,
-    marginRight: 12,
-    marginTop: 2,
   },
   infoContent: {
     flex: 1,

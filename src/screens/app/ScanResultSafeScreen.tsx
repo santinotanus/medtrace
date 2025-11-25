@@ -12,6 +12,7 @@ import { RootStackParamList, TraceabilityStep } from '../../types';
 import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 import { formatDate } from '../../utils/format';
+import { CheckCircleIcon, ChevronLeftIcon } from '../../components/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanResultSafe'>;
 
@@ -30,7 +31,7 @@ export default function ScanResultSafeScreen({ navigation, route }: Props) {
           style={styles.headerButton}
           onPress={() => navigation.popToTop()}
         >
-          <View style={styles.headerIcon} />
+          <ChevronLeftIcon size={24} color={COLORS.gray700} strokeWidth={2.5} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Resultado</Text>
         <View style={styles.headerButton} />
@@ -40,7 +41,7 @@ export default function ScanResultSafeScreen({ navigation, route }: Props) {
         <View style={styles.statusContainer}>
           <View style={styles.statusCard}>
             <View style={styles.statusIconContainer}>
-              <View style={styles.statusIcon} />
+              <CheckCircleIcon size={48} color={COLORS.success} strokeWidth={2.5} />
             </View>
             <Text style={styles.statusTitle}>Medicamento Seguro</Text>
             <Text style={styles.statusSubtitle}>Verificado en blockchain</Text>
@@ -142,12 +143,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...SHADOWS.small,
   },
-  headerIcon: {
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.gray700,
-    borderRadius: 4,
-  },
   headerTitle: {
     fontSize: SIZES.lg,
     fontWeight: '600',
@@ -174,12 +169,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-  },
-  statusIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.success,
   },
   statusTitle: {
     fontSize: SIZES.xxl,

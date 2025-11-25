@@ -15,6 +15,7 @@ import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { QRIcon, CheckCircleIcon, XIcon } from '../../components/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
@@ -86,7 +87,7 @@ export default function RegisterScreen({ navigation }: Props) {
       >
         <View style={styles.logoContainer}>
           <View style={styles.logo}>
-            <View style={styles.logoIcon} />
+            <QRIcon size={80} color={COLORS.primary} strokeWidth={2.5} />
           </View>
           <Text style={styles.logoTitle}>MedTrace</Text>
           <Text style={styles.logoSubtitle}>Crea tu cuenta</Text>
@@ -139,9 +140,11 @@ export default function RegisterScreen({ navigation }: Props) {
             style={styles.termsContainer}
             onPress={() => setAcceptTerms(!acceptTerms)}
           >
-            <View style={[styles.checkbox, acceptTerms && styles.checkboxActive]}>
-              {acceptTerms && <View style={styles.checkboxInner} />}
-            </View>
+            {acceptTerms ? (
+              <CheckCircleIcon size={20} color={COLORS.success} strokeWidth={2} />
+            ) : (
+              <View style={styles.checkboxEmpty} />
+            )}
             <Text style={styles.termsText}>
               Acepto los{' '}
               <Text style={styles.termsLink}>términos y condiciones</Text> y la{' '}
@@ -206,20 +209,11 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   logo: {
-    width: 80,
-    height: 80,
-    backgroundColor: COLORS.primary,
-    borderRadius: 20,
+    width: 120,
+    height: 120,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-    ...SHADOWS.medium,
-  },
-  logoIcon: {
-    width: 48,
-    height: 48,
-    backgroundColor: COLORS.white,
-    borderRadius: 8,
   },
   logoTitle: {
     fontSize: SIZES.xxxl,
@@ -261,25 +255,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     gap: 8,
   },
-  checkbox: {
+  checkboxEmpty: {
     width: 20,
     height: 20,
     borderWidth: 2,
     borderColor: COLORS.gray300,
-    borderRadius: 4,
+    borderRadius: 10,
     marginTop: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxActive: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primary,
-  },
-  checkboxInner: {
-    width: 12,
-    height: 12,
-    backgroundColor: COLORS.white,
-    borderRadius: 2,
   },
   termsText: {
     flex: 1,

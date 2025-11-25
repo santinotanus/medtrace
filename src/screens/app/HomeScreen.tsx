@@ -25,6 +25,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useUserStats } from '../../hooks/useUserStats';
 import { supabase } from '../../lib/supabase';
 import { formatDate, formatRelativeTime } from '../../utils/format';
+import { BellIcon, QRIcon, AlertTriangleIcon, CheckCircleIcon } from '../../components/Icons';
 
 type HomeProps = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, 'Home'>,
@@ -132,10 +133,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
               style={styles.notificationButton}
               onPress={() => navigation.navigate('Alerts')}
             >
-              <View style={styles.bellIcon}>
-                <View style={styles.bellTop} />
-                <View style={styles.bellBody} />
-              </View>
+              <BellIcon size={24} color={COLORS.gray700} strokeWidth={2} />
               <View style={styles.notificationBadge} />
             </TouchableOpacity>
           )}
@@ -154,7 +152,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
             onPress={() => navigation.navigate('AlertDetail', { alertId: bannerAlert.id })}
           >
             <View style={styles.alertIconContainer}>
-              <View style={styles.alertTriangle} />
+              <AlertTriangleIcon size={32} color={COLORS.error} strokeWidth={2} />
             </View>
             <View style={styles.alertContent}>
               <Text style={styles.alertTitle}>Alerta Activa</Text>
@@ -177,12 +175,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
               onPress={() => navigation.navigate('Scanner')}
               disabled={isGuest}
             >
-              <View style={styles.qrIconContainer}>
-                <View style={styles.qrSquare1} />
-                <View style={styles.qrSquare2} />
-                <View style={styles.qrSquare3} />
-                <View style={styles.qrSquare4} />
-              </View>
+              <QRIcon size={48} color={COLORS.white} strokeWidth={2} />
               <Text style={styles.quickActionTextPrimary}>
                 {isGuest ? 'Inicia sesión para escanear' : 'Escanear QR'}
               </Text>
@@ -193,9 +186,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
               onPress={() => navigation.navigate('Report')}
               disabled={!canReport}
             >
-              <View style={styles.reportIconContainer}>
-                <View style={styles.reportTriangle} />
-              </View>
+              <AlertTriangleIcon size={48} color={COLORS.error} strokeWidth={2} />
               <Text style={styles.quickActionTextSecondary}>Reportar</Text>
             </TouchableOpacity>
           </View>
@@ -263,11 +254,10 @@ export default function HomeScreen({ navigation }: HomeProps) {
                   }}
                 >
                   <View style={styles.activityIconContainer}>
-                    <View
-                      style={[
-                        styles.checkIcon,
-                        entry.result !== 'SAFE' && styles.activityIconAlert,
-                      ]}
+                    <CheckCircleIcon
+                      size={24}
+                      color={entry.result === 'SAFE' ? COLORS.success : COLORS.error}
+                      strokeWidth={2}
                     />
                   </View>
                   <View style={styles.activityContent}>
@@ -328,27 +318,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...SHADOWS.medium,
   },
-  bellIcon: {
-    width: 20,
-    height: 20,
-    alignItems: 'center',
-  },
-  bellTop: {
-    width: 12,
-    height: 8,
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
-    borderWidth: 2,
-    borderColor: COLORS.gray700,
-  },
-  bellBody: {
-    width: 16,
-    height: 12,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-    backgroundColor: COLORS.gray700,
-    marginTop: 2,
-  },
   notificationBadge: {
     position: 'absolute',
     top: 8,
@@ -376,17 +345,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
-  },
-  alertTriangle: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 12,
-    borderRightWidth: 12,
-    borderBottomWidth: 24,
-    borderStyle: 'solid',
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: COLORS.error,
   },
   alertContent: {
     flex: 1,
@@ -444,48 +402,6 @@ const styles = StyleSheet.create({
   quickActionDisabled: {
     opacity: 0.4,
   },
-  qrIconContainer: {
-    width: 48,
-    height: 48,
-    position: 'relative',
-    marginBottom: 12,
-  },
-  qrSquare1: {
-    position: 'absolute',
-    width: 16,
-    height: 16,
-    backgroundColor: COLORS.white,
-    borderRadius: 2,
-    top: 0,
-    left: 0,
-  },
-  qrSquare2: {
-    position: 'absolute',
-    width: 16,
-    height: 16,
-    backgroundColor: COLORS.white,
-    borderRadius: 2,
-    top: 0,
-    right: 0,
-  },
-  qrSquare3: {
-    position: 'absolute',
-    width: 16,
-    height: 16,
-    backgroundColor: COLORS.white,
-    borderRadius: 2,
-    bottom: 0,
-    left: 0,
-  },
-  qrSquare4: {
-    position: 'absolute',
-    width: 16,
-    height: 16,
-    backgroundColor: COLORS.white,
-    borderRadius: 2,
-    bottom: 0,
-    right: 0,
-  },
   quickActionTextPrimary: {
     color: COLORS.white,
     fontSize: SIZES.base,
@@ -497,26 +413,6 @@ const styles = StyleSheet.create({
     fontSize: SIZES.base,
     fontWeight: '600',
     textAlign: 'center',
-  },
-  reportIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: COLORS.errorLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  reportTriangle: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 12,
-    borderRightWidth: 12,
-    borderBottomWidth: 24,
-    borderStyle: 'solid',
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: COLORS.error,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -558,17 +454,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
-  },
-  checkIcon: {
-    width: 20,
-    height: 12,
-    borderLeftWidth: 4,
-    borderBottomWidth: 4,
-    borderColor: COLORS.success,
-    transform: [{ rotate: '-45deg' }],
-  },
-  activityIconAlert: {
-    borderColor: COLORS.error,
   },
   activityContent: {
     flex: 1,

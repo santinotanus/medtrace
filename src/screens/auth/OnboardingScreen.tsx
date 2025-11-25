@@ -12,6 +12,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import { COLORS, SIZES } from '../../constants/theme';
+import { QRIcon, AlertTriangleIcon, ShieldIcon } from '../../components/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
@@ -87,13 +88,7 @@ export default function OnboardingScreen({ navigation }: Props) {
     if (type === 'qr') {
       return (
         <View style={[styles.iconContainer, { backgroundColor: bg }]}>
-          <View style={styles.qrIcon}>
-            <View style={styles.qrSquare1} />
-            <View style={styles.qrSquare2} />
-            <View style={styles.qrSquare3} />
-            <View style={styles.qrSquare4} />
-            <View style={styles.qrCenter} />
-          </View>
+          <QRIcon size={64} color={COLORS.primary} strokeWidth={2} />
         </View>
       );
     }
@@ -101,21 +96,14 @@ export default function OnboardingScreen({ navigation }: Props) {
     if (type === 'alert') {
       return (
         <View style={[styles.iconContainer, { backgroundColor: bg }]}>
-          <View style={styles.alertIconWrapper}>
-            <View style={styles.alertTriangle} />
-            <View style={styles.alertExclamation} />
-            <View style={styles.alertDot} />
-          </View>
+          <AlertTriangleIcon size={64} color={COLORS.error} strokeWidth={2} />
         </View>
       );
     }
 
     return (
       <View style={[styles.iconContainer, { backgroundColor: bg }]}>
-        <View style={styles.shieldIcon}>
-          <View style={styles.shieldBody} />
-          <View style={styles.shieldCheck} />
-        </View>
+        <ShieldIcon size={64} color={COLORS.success} strokeWidth={2} />
       </View>
     );
   };
@@ -214,120 +202,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 32,
-  },
-  // QR Icon
-  qrIcon: {
-    width: 64,
-    height: 64,
-    position: 'relative',
-  },
-  qrSquare1: {
-    position: 'absolute',
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.primary,
-    borderRadius: 3,
-    top: 0,
-    left: 0,
-  },
-  qrSquare2: {
-    position: 'absolute',
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.primary,
-    borderRadius: 3,
-    top: 0,
-    right: 0,
-  },
-  qrSquare3: {
-    position: 'absolute',
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.primary,
-    borderRadius: 3,
-    bottom: 0,
-    left: 0,
-  },
-  qrSquare4: {
-    position: 'absolute',
-    width: 12,
-    height: 12,
-    backgroundColor: COLORS.primary,
-    borderRadius: 2,
-    bottom: 0,
-    right: 0,
-  },
-  qrCenter: {
-    position: 'absolute',
-    width: 16,
-    height: 16,
-    backgroundColor: COLORS.primary,
-    borderRadius: 2,
-    top: 24,
-    left: 24,
-  },
-  // Alert Icon
-  alertIconWrapper: {
-    width: 64,
-    height: 64,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  alertTriangle: {
-    width: 0,
-    height: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
-    borderLeftWidth: 28,
-    borderRightWidth: 28,
-    borderBottomWidth: 50,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: COLORS.error,
-  },
-  alertExclamation: {
-    position: 'absolute',
-    width: 4,
-    height: 20,
-    backgroundColor: COLORS.white,
-    borderRadius: 2,
-    top: 15,
-  },
-  alertDot: {
-    position: 'absolute',
-    width: 5,
-    height: 5,
-    backgroundColor: COLORS.white,
-    borderRadius: 2.5,
-    bottom: 8,
-  },
-  // Shield Icon
-  shieldIcon: {
-    width: 64,
-    height: 64,
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shieldBody: {
-    width: 50,
-    height: 56,
-    backgroundColor: COLORS.success,
-    borderRadius: 25,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-  },
-  shieldCheck: {
-    position: 'absolute',
-    width: 28,
-    height: 16,
-    borderLeftWidth: 4,
-    borderBottomWidth: 4,
-    borderColor: COLORS.white,
-    transform: [{ rotate: '-45deg' }],
-    left: 18,
-    top: 20,
   },
   title: {
     fontSize: 28,

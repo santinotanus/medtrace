@@ -14,6 +14,7 @@ import { RootStackParamList, UserSettings } from '../../types';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { useBiometrics } from '../../hooks/useBiometrics';
+import { ChevronLeftIcon, EditIcon, LockIcon, BellIcon, HelpCircleIcon, InfoIcon, LogOutIcon, RefreshIcon } from '../../components/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
@@ -127,7 +128,7 @@ export default function SettingsScreen({ navigation }: Props) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <View style={styles.backIcon} />
+          <ChevronLeftIcon size={24} color={COLORS.gray700} strokeWidth={2.5} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Configuración</Text>
         <View style={styles.placeholder} />
@@ -143,10 +144,12 @@ export default function SettingsScreen({ navigation }: Props) {
             disabled={isGuest}
           >
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: COLORS.primaryLight }]} />
+              <View style={[styles.menuIconContainer, { backgroundColor: COLORS.primaryLight }]}>
+                <EditIcon size={20} color={COLORS.primary} strokeWidth={2} />
+              </View>
               <Text style={styles.menuItemText}>Editar Perfil</Text>
             </View>
-            <View style={styles.chevron} />
+            <ChevronLeftIcon size={20} color={COLORS.gray400} strokeWidth={2} style={styles.chevronIcon} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -155,10 +158,12 @@ export default function SettingsScreen({ navigation }: Props) {
             disabled={isGuest}
           >
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: COLORS.primaryLight }]} />
+              <View style={[styles.menuIconContainer, { backgroundColor: COLORS.primaryLight }]}>
+                <LockIcon size={20} color={COLORS.primary} strokeWidth={2} />
+              </View>
               <Text style={styles.menuItemText}>Cambiar Contraseña</Text>
             </View>
-            <View style={styles.chevron} />
+            <ChevronLeftIcon size={20} color={COLORS.gray400} strokeWidth={2} style={styles.chevronIcon} />
           </TouchableOpacity>
         </View>
 
@@ -167,7 +172,9 @@ export default function SettingsScreen({ navigation }: Props) {
 
           <View style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: COLORS.gray100 }]} />
+              <View style={[styles.menuIconContainer, { backgroundColor: COLORS.gray100 }]}>
+                <LockIcon size={20} color={COLORS.gray700} strokeWidth={2} />
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.menuItemText}>Modo Oscuro</Text>
                 <Text style={styles.menuItemSubtext}>Próximamente</Text>
@@ -184,20 +191,24 @@ export default function SettingsScreen({ navigation }: Props) {
 
           <TouchableOpacity style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: COLORS.gray100 }]} />
+              <View style={[styles.menuIconContainer, { backgroundColor: COLORS.gray100 }]}>
+                <InfoIcon size={20} color={COLORS.gray700} strokeWidth={2} />
+              </View>
               <Text style={styles.menuItemText}>Idioma</Text>
             </View>
             <View style={styles.languageContainer}>
               <Text style={styles.languageText}>
                 {((localSettings || userSettings)?.language ?? 'es').toUpperCase()}
               </Text>
-              <View style={styles.chevron} />
+              <ChevronLeftIcon size={20} color={COLORS.gray400} strokeWidth={2} style={styles.chevronIcon} />
             </View>
           </TouchableOpacity>
 
           <View style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: COLORS.gray100 }]} />
+              <View style={[styles.menuIconContainer, { backgroundColor: COLORS.gray100 }]}>
+                <LockIcon size={20} color={COLORS.gray700} strokeWidth={2} />
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.menuItemText}>Biometría</Text>
                 <Text style={styles.menuItemSubtext}>
@@ -226,15 +237,19 @@ export default function SettingsScreen({ navigation }: Props) {
             disabled={isGuest}
           >
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: COLORS.successLight }]} />
+              <View style={[styles.menuIconContainer, { backgroundColor: COLORS.successLight }]}>
+                <BellIcon size={20} color={COLORS.success} strokeWidth={2} />
+              </View>
               <Text style={styles.menuItemText}>Configurar Notificaciones</Text>
             </View>
-            <View style={styles.chevron} />
+            <ChevronLeftIcon size={20} color={COLORS.gray400} strokeWidth={2} style={styles.chevronIcon} />
           </TouchableOpacity>
 
           <View style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: COLORS.successLight }]} />
+              <View style={[styles.menuIconContainer, { backgroundColor: COLORS.successLight }]}>
+                <RefreshIcon size={20} color={COLORS.success} strokeWidth={2} />
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.menuItemText}>Sincronización Automática</Text>
                 <Text style={styles.menuItemSubtext}>Actualizar alertas en segundo plano</Text>
@@ -258,18 +273,22 @@ export default function SettingsScreen({ navigation }: Props) {
             onPress={() => navigation.navigate('Privacy')}
           >
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: COLORS.gray100 }]} />
+              <View style={[styles.menuIconContainer, { backgroundColor: COLORS.gray100 }]}>
+                <HelpCircleIcon size={20} color={COLORS.gray700} strokeWidth={2} />
+              </View>
               <Text style={styles.menuItemText}>Política de Privacidad</Text>
             </View>
-            <View style={styles.chevron} />
+            <ChevronLeftIcon size={20} color={COLORS.gray400} strokeWidth={2} style={styles.chevronIcon} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: COLORS.gray100 }]} />
+              <View style={[styles.menuIconContainer, { backgroundColor: COLORS.gray100 }]}>
+                <InfoIcon size={20} color={COLORS.gray700} strokeWidth={2} />
+              </View>
               <Text style={styles.menuItemText}>Términos y Condiciones</Text>
             </View>
-            <View style={styles.chevron} />
+            <ChevronLeftIcon size={20} color={COLORS.gray400} strokeWidth={2} style={styles.chevronIcon} />
           </TouchableOpacity>
         </View>
 
@@ -301,14 +320,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOWS.small,
-  },
-  backIcon: {
-    width: 12,
-    height: 12,
-    borderLeftWidth: 3,
-    borderBottomWidth: 3,
-    borderColor: COLORS.gray700,
-    transform: [{ rotate: '45deg' }],
   },
   headerTitle: {
     flex: 1,
@@ -347,7 +358,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 12,
   },
-  menuIcon: {
+  menuIconContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -363,13 +374,8 @@ const styles = StyleSheet.create({
     fontSize: SIZES.sm,
     color: COLORS.gray500,
   },
-  chevron: {
-    width: 12,
-    height: 12,
-    borderRightWidth: 2,
-    borderTopWidth: 2,
-    borderColor: COLORS.gray400,
-    transform: [{ rotate: '45deg' }],
+  chevronIcon: {
+    transform: [{ rotate: '180deg' }],
   },
   languageContainer: {
     flexDirection: 'row',

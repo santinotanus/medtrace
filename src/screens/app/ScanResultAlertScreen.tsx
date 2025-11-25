@@ -12,6 +12,7 @@ import { RootStackParamList, AlertRecord } from '../../types';
 import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 import { formatDate } from '../../utils/format';
+import { AlertTriangleIcon, ChevronLeftIcon } from '../../components/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanResultAlert'>;
 
@@ -32,7 +33,7 @@ export default function ScanResultAlertScreen({ navigation, route }: Props) {
           style={styles.headerButton}
           onPress={() => navigation.popToTop()}
         >
-          <View style={styles.headerIcon} />
+          <ChevronLeftIcon size={24} color={COLORS.gray700} strokeWidth={2.5} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Resultado</Text>
         <View style={styles.headerButton} />
@@ -42,7 +43,7 @@ export default function ScanResultAlertScreen({ navigation, route }: Props) {
         <View style={styles.statusContainer}>
           <View style={styles.alertCard}>
             <View style={styles.alertIconContainer}>
-              <View style={styles.alertIcon} />
+              <AlertTriangleIcon size={48} color={COLORS.error} strokeWidth={2.5} />
             </View>
             <Text style={styles.alertTitle}>⚠️ NO USAR</Text>
             <Text style={styles.alertSubtitle}>
@@ -54,7 +55,9 @@ export default function ScanResultAlertScreen({ navigation, route }: Props) {
         <View style={styles.section}>
           <View style={styles.detailsCard}>
             <View style={styles.detailsHeader}>
-              <View style={styles.detailsIcon} />
+              <View style={styles.detailsIconContainer}>
+                <AlertTriangleIcon size={32} color={COLORS.error} strokeWidth={2} />
+              </View>
               <View style={styles.detailsHeaderText}>
                 <Text style={styles.detailsTitle}>
                   {currentAlert?.title ?? 'Lote en revisión'}
@@ -170,12 +173,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...SHADOWS.small,
   },
-  headerIcon: {
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.gray700,
-    borderRadius: 4,
-  },
   headerTitle: {
     fontSize: SIZES.lg,
     fontWeight: '600',
@@ -202,12 +199,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-  },
-  alertIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.error,
   },
   alertTitle: {
     fontSize: SIZES.xxl,
@@ -240,11 +231,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 16,
   },
-  detailsIcon: {
+  detailsIconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
     backgroundColor: COLORS.errorLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   detailsHeaderText: {
     flex: 1,

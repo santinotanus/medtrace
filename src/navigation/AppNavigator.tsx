@@ -8,6 +8,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, MainTabParamList } from '../types';
 import { COLORS } from '../constants/theme';
 import { useAuth } from '../hooks/useAuth';
+import { HomeIcon, QRIcon, UserIcon } from '../components/Icons';
 
 // Auth Screens
 import OnboardingScreen from '../screens/auth/OnboardingScreen';
@@ -42,10 +43,6 @@ import CreateAlertScreen from '../screens/app/CreateAlertScreen';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-const TabIcon = ({ focused }: { focused: boolean }) => (
-  <View style={[styles.tabIcon, focused && styles.tabIconActive]} />
-);
-
 // Dummy component for Scan tab (navigation handled by listener)
 function ScanTabPlaceholder() {
   return null;
@@ -70,7 +67,9 @@ function MainTabs({ navigation }: NativeStackScreenProps<RootStackParamList, 'Ma
         component={HomeScreen}
         options={{
           tabBarLabel: 'Inicio',
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} />,
+          tabBarIcon: ({ focused, color }) => (
+            <HomeIcon size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
+          ),
         }}
       />
       <Tab.Screen
@@ -84,10 +83,10 @@ function MainTabs({ navigation }: NativeStackScreenProps<RootStackParamList, 'Ma
         }}
         options={{
           tabBarLabel: 'Escanear',
-          tabBarIcon: () => (
+          tabBarIcon: ({ color }) => (
             <View style={styles.scanButtonContainer}>
               <View style={styles.scanButton}>
-                <View style={styles.scanIcon} />
+                <QRIcon size={28} color={COLORS.white} strokeWidth={2.5} />
               </View>
             </View>
           ),
@@ -98,7 +97,9 @@ function MainTabs({ navigation }: NativeStackScreenProps<RootStackParamList, 'Ma
         component={ProfileScreen}
         options={{
           tabBarLabel: isGuest ? 'Perfil (invitado)' : 'Perfil',
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} />,
+          tabBarIcon: ({ focused, color }) => (
+            <UserIcon size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
+          ),
         }}
       />
     </Tab.Navigator>
@@ -208,15 +209,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
-  tabIcon: {
-    width: 24,
-    height: 24,
-    backgroundColor: COLORS.gray500,
-    borderRadius: 6,
-  },
-  tabIconActive: {
-    backgroundColor: COLORS.primary,
-  },
   scanButtonContainer: {
     position: 'relative',
     top: -20,
@@ -233,12 +225,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
-  },
-  scanIcon: {
-    width: 28,
-    height: 28,
-    backgroundColor: COLORS.white,
-    borderRadius: 6,
   },
   loadingContainer: {
     flex: 1,

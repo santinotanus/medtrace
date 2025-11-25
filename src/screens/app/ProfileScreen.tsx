@@ -15,13 +15,24 @@ import { MainTabParamList, RootStackParamList } from '../../types';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { useUserStats } from '../../hooks/useUserStats';
+import {
+  EditIcon,
+  FileTextIcon,
+  BellIcon,
+  ShieldIcon,
+  HelpCircleIcon,
+  InfoIcon,
+  LogOutIcon,
+  SettingsIcon,
+} from '../../components/Icons';
 
 // Tipado
 type TabNav = BottomTabNavigationProp<MainTabParamList, 'Profile'>;
 type RootNav = NativeStackNavigationProp<RootStackParamList>;
 // Componente individual del menú
 interface MenuItemProps {
-  icon: string;
+  Icon: React.FC<{ size: number; color: string; strokeWidth: number }>;
+  iconColor: string;
   iconBg: string;
   title: string;
   subtitle: string;
@@ -29,7 +40,8 @@ interface MenuItemProps {
 }
 
 const MenuItem: React.FC<MenuItemProps> = ({
-  icon,
+  Icon,
+  iconColor,
   iconBg,
   title,
   subtitle,
@@ -37,7 +49,9 @@ const MenuItem: React.FC<MenuItemProps> = ({
 }) => (
   <TouchableOpacity style={styles.menuItem} onPress={onPress}>
     <View style={styles.menuItemLeft}>
-      <View style={[styles.menuIcon, { backgroundColor: iconBg }]} />
+      <View style={[styles.menuIconContainer, { backgroundColor: iconBg }]}>
+        <Icon size={20} color={iconColor} strokeWidth={2} />
+      </View>
       <View style={styles.menuItemText}>
         <Text style={styles.menuItemTitle}>{title}</Text>
         <Text style={styles.menuItemSubtitle}>{subtitle}</Text>
@@ -102,14 +116,16 @@ export default function ProfileScreen() {
           {/* Guest Menu */}
           <View style={styles.menuContainer}>
             <MenuItem
-              icon="help"
+              Icon={HelpCircleIcon}
+              iconColor={COLORS.gray700}
               iconBg={COLORS.gray100}
               title="Ayuda y soporte"
               subtitle="Preguntas frecuentes"
               onPress={() => stackNav?.navigate('Help')}
             />
             <MenuItem
-              icon="info"
+              Icon={InfoIcon}
+              iconColor={COLORS.gray700}
               iconBg={COLORS.gray100}
               title="Acerca de MedTrace"
               subtitle="Versión 1.0.0"
@@ -176,7 +192,8 @@ export default function ProfileScreen() {
         {/* Menú */}
         <View style={styles.menuContainer}>
           <MenuItem
-            icon="user"
+            Icon={EditIcon}
+            iconColor={COLORS.primary}
             iconBg={COLORS.primaryLight}
             title="Datos personales"
             subtitle="Editar información"
@@ -184,7 +201,8 @@ export default function ProfileScreen() {
           />
 
           <MenuItem
-            icon="document"
+            Icon={FileTextIcon}
+            iconColor={COLORS.warning}
             iconBg={COLORS.warningLight}
             title="Mis Reportes"
             subtitle="Ver historial de reportes"
@@ -193,7 +211,8 @@ export default function ProfileScreen() {
 
           {profile?.role === 'ADMIN' && (
             <MenuItem
-              icon="admin"
+              Icon={SettingsIcon}
+              iconColor={COLORS.error}
               iconBg={COLORS.errorLight}
               title="Gestionar Reportes"
               subtitle="Panel administrativo"
@@ -202,7 +221,8 @@ export default function ProfileScreen() {
           )}
 
           <MenuItem
-            icon="bell"
+            Icon={BellIcon}
+            iconColor={COLORS.success}
             iconBg={COLORS.successLight}
             title="Notificaciones"
             subtitle="Configurar alertas"
@@ -210,7 +230,8 @@ export default function ProfileScreen() {
           />
 
           <MenuItem
-            icon="lock"
+            Icon={ShieldIcon}
+            iconColor={COLORS.gray700}
             iconBg={COLORS.gray100}
             title="Privacidad y seguridad"
             subtitle="Gestionar permisos"
@@ -218,7 +239,8 @@ export default function ProfileScreen() {
           />
 
           <MenuItem
-            icon="help"
+            Icon={HelpCircleIcon}
+            iconColor={COLORS.gray700}
             iconBg={COLORS.gray100}
             title="Ayuda y soporte"
             subtitle="Preguntas frecuentes"
@@ -226,7 +248,8 @@ export default function ProfileScreen() {
           />
 
           <MenuItem
-            icon="info"
+            Icon={InfoIcon}
+            iconColor={COLORS.gray700}
             iconBg={COLORS.gray100}
             title="Acerca de MedTrace"
             subtitle="Versión 1.0.0"
@@ -323,7 +346,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  menuIcon: {
+  menuIconContainer: {
     width: 40,
     height: 40,
     borderRadius: 8,

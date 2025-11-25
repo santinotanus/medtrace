@@ -15,6 +15,7 @@ import { RootStackParamList, AlertType, BatchRecord } from '../../types';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { ChevronLeftIcon } from '../../components/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateAlert'>;
 
@@ -138,13 +139,13 @@ export default function CreateAlertScreen({ navigation, route }: Props) {
 
   if (profile?.role !== 'ADMIN') {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <View style={styles.backIcon} />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.errorContainer}>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <ChevronLeftIcon size={24} color={COLORS.gray700} strokeWidth={2.5} />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.errorContainer}>
           <Text style={styles.errorText}>No tienes permisos para acceder a esta sección.</Text>
         </View>
       </SafeAreaView>
@@ -155,7 +156,7 @@ export default function CreateAlertScreen({ navigation, route }: Props) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <View style={styles.backIcon} />
+          <ChevronLeftIcon size={24} color={COLORS.gray700} strokeWidth={2.5} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Crear Alerta Sanitaria</Text>
       </View>
@@ -344,14 +345,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOWS.small,
-  },
-  backIcon: {
-    width: 12,
-    height: 12,
-    borderLeftWidth: 3,
-    borderBottomWidth: 3,
-    borderColor: COLORS.gray700,
-    transform: [{ rotate: '45deg' }],
   },
   headerTitle: {
     fontSize: SIZES.lg,

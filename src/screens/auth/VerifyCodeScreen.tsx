@@ -14,6 +14,7 @@ import { RootStackParamList } from '../../types';
 import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
+import { AlertTriangleIcon } from '../../components/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VerifyCode'>;
 
@@ -152,7 +153,7 @@ export default function VerifyCodeScreen({ navigation, route }: Props) {
         </View>
 
         <View style={styles.warningBox}>
-          <View style={styles.warningIcon} />
+          <AlertTriangleIcon size={24} color={COLORS.error} strokeWidth={2} />
           <Text style={styles.warningText}>
             Revisa también tu carpeta de spam si no encuentras el correo.
           </Text>
@@ -289,14 +290,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     alignItems: 'flex-start',
-  },
-  warningIcon: {
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.warning,
-    borderRadius: 10,
-    marginRight: 12,
-    marginTop: 2,
   },
   warningText: {
     flex: 1,

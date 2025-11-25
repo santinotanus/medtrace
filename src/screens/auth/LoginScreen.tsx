@@ -16,6 +16,7 @@ import Button from '../../components/Button';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { QRIcon } from '../../components/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -69,12 +70,7 @@ export default function LoginScreen({ navigation }: Props) {
           {/* Logo Section */}
           <View style={styles.logoContainer}>
             <View style={styles.logo}>
-              <View style={styles.logoQR}>
-                {/* QR Icon simplificado */}
-                <View style={styles.qrSquare1} />
-                <View style={styles.qrSquare2} />
-                <View style={styles.qrSquare3} />
-              </View>
+              <QRIcon size={80} color={COLORS.primary} strokeWidth={2.5} />
             </View>
             <Text style={styles.logoTitle}>MedTrace</Text>
             <Text style={styles.logoSubtitle}>
@@ -176,46 +172,11 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   logo: {
-    width: 80,
-    height: 80,
-    backgroundColor: COLORS.primary,
-    borderRadius: 20,
+    width: 120,
+    height: 120,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-    ...SHADOWS.medium,
-  },
-  logoQR: {
-    width: 48,
-    height: 48,
-    position: 'relative',
-  },
-  qrSquare1: {
-    position: 'absolute',
-    width: 16,
-    height: 16,
-    backgroundColor: COLORS.white,
-    borderRadius: 2,
-    top: 0,
-    left: 0,
-  },
-  qrSquare2: {
-    position: 'absolute',
-    width: 16,
-    height: 16,
-    backgroundColor: COLORS.white,
-    borderRadius: 2,
-    top: 0,
-    right: 0,
-  },
-  qrSquare3: {
-    position: 'absolute',
-    width: 16,
-    height: 16,
-    backgroundColor: COLORS.white,
-    borderRadius: 2,
-    bottom: 0,
-    left: 0,
   },
   logoTitle: {
     fontSize: 28,

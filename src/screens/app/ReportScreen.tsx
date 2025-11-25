@@ -22,6 +22,7 @@ import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { formatDate } from '../../utils/format';
+import { ChevronLeftIcon, ImageIcon } from '../../components/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Report'>;
 
@@ -258,7 +259,7 @@ export default function ReportScreen({ navigation, route }: Props) {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <View style={styles.backIcon} />
+            <ChevronLeftIcon size={24} color={COLORS.gray700} strokeWidth={2.5} />
           </TouchableOpacity>
           <View style={styles.headerText}>
             <Text style={styles.headerTitle}>Reportar Problema</Text>
@@ -405,7 +406,7 @@ export default function ReportScreen({ navigation, route }: Props) {
               ))}
               {photos.length < 3 && (
                 <TouchableOpacity style={styles.photoUpload} onPress={pickImage}>
-                  <View style={styles.photoIcon} />
+                  <ImageIcon size={24} color={COLORS.gray400} strokeWidth={2} />
                   <Text style={styles.photoText}>Agregar foto</Text>
                 </TouchableOpacity>
               )}
@@ -475,12 +476,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOWS.small,
-  },
-  backIcon: {
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.gray700,
-    borderRadius: 4,
   },
   headerText: {
     flex: 1,
@@ -667,13 +662,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.white,
-  },
-  photoIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: COLORS.gray300,
-    marginBottom: 8,
   },
   photoText: {
     fontSize: SIZES.xs,

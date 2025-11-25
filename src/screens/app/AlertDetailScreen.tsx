@@ -18,6 +18,7 @@ import { supabase } from '../../lib/supabase';
 import { formatDate } from '../../utils/format';
 import { useAuth } from '../../hooks/useAuth';
 import { useBiometrics } from '../../hooks/useBiometrics';
+import { ChevronLeftIcon, RefreshIcon } from '../../components/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AlertDetail'>;
 
@@ -106,11 +107,11 @@ export default function AlertDetailScreen({ navigation, route }: Props) {
           style={styles.headerButton}
           onPress={() => navigation.goBack()}
         >
-          <View style={styles.headerIcon} />
+          <ChevronLeftIcon size={24} color={COLORS.gray700} strokeWidth={2.5} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Detalle de Alerta</Text>
         <TouchableOpacity style={styles.headerButton} onPress={fetchAlert}>
-          <View style={styles.refreshIcon} />
+          <RefreshIcon size={20} color={COLORS.gray700} strokeWidth={2} />
         </TouchableOpacity>
       </View>
 
@@ -267,17 +268,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOWS.small,
-  },
-  headerIcon: {
-    width: 20,
-    height: 20,
-    backgroundColor: COLORS.gray700,
-    borderRadius: 4,
-  },
-  refreshIcon: {
-    width: 20,
-    height: 2,
-    backgroundColor: COLORS.gray700,
   },
   headerTitle: {
     fontSize: SIZES.lg,
